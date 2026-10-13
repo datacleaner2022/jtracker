@@ -1,3 +1,3 @@
-# Built by tools/sync_projects.py with Unix line endings: keep them, so a rebuild only shows real changes
+# Unix line endings everywhere, so diffs only show real changes
 * text=auto eol=lf
 *.jpg binary

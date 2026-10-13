@@ -1,20 +1,23 @@
-# Job tracker in your browser (static edition)
+# Job tracker in your browser
 
-Job tracker as one web page: no Python, nothing to install. Double-click `index.html` to open it.
+Job tracker as one web page, hosted for free on GitHub Pages: nothing to install, no server, no account.
+
+**Open it:** https://janeset.github.io/job-tracker-webapp/
+
 Chrome and Edge work best; Firefox and Safari work too. The How to use guide (the **Guide** button) walks through it.
 
-## What's different from the desktop app
+## How it works
 
-- Everything you add is kept in this browser, on this computer: your tracker, resumes, documents,
-  research and settings. Use the same browser each time. Clearing your browsing data clears Job tracker
-  too, so download a backup now and then (**Settings**, **Local files**, **Back up everything**).
-- Your tracker is the same Excel file as before. Open it with **Open a tracker file**.
-  In Chrome and Edge, Job tracker stays linked to the file and saves every change straight into it,
-  with its formats, dropdowns and formulas. In other browsers, a bar reminds you to download the
-  updated tracker after making changes.
+- The site is a single static page (`index.html`). There is no server behind it: everything you add is kept
+  in this browser, on this computer: your tracker, resumes, documents, research and settings. Use the same
+  browser each time. Clearing your browsing data clears Job tracker too, so download a backup now and then
+  (**Settings**, **Local files**, **Back up everything**).
+- Your tracker is an Excel file. Open it with **Open a tracker file**. In Chrome and Edge, Job tracker stays
+  linked to the file and saves every change straight into it, with its formats, dropdowns and formulas.
+  In other browsers, a bar reminds you to download the updated tracker after making changes.
 - Two ways to draft: free chat (copy and paste into ChatGPT or Claude) or a local model.
-  A local model in LM Studio can also search the web for Find jobs (see below). API keys, the automatic
-  job finder and the link check need the desktop app.
+  A local model in LM Studio can also search the web for Find jobs (see below). Paid API keys, the automatic
+  job finder and the link check need a server, so they aren't part of this site.
 - Cover letters and resumes are made as Word files and PDFs and kept with each job. Download them,
   or use **Open folder** on a job to see everything kept for it.
 - In Chrome and Edge you can also save your files to a folder on your computer: on the **Resume** tab,
@@ -26,15 +29,18 @@ Chrome and Edge work best; Firefox and Safari work too. The How to use guide (th
 
 ## Using a local model (Ollama or LM Studio)
 
-A web page may only talk to a local model that allows it.
+The site is served over HTTPS from `https://janeset.github.io`, and your model runs on your own computer.
+The model has to allow this site to talk to it, and the browser asks you once to allow it too:
+Chrome and Edge show **"… wants to access other apps and services on this device"** (or **devices on your local
+network**). Click **Allow**. If you clicked Block, use the icon at the left of the address bar to change it.
 
 ### Ollama
 
 1. Quit Ollama.
-2. Set the environment variable `OLLAMA_ORIGINS` to `*`, then start Ollama again.
-   - Windows: `setx OLLAMA_ORIGINS "*"`
-   - macOS: `launchctl setenv OLLAMA_ORIGINS "*"`
-   - Linux: add `Environment="OLLAMA_ORIGINS=*"` to the ollama service, then restart it
+2. Set the environment variable `OLLAMA_ORIGINS` to the site's address, then start Ollama again.
+   - Windows: `setx OLLAMA_ORIGINS "https://janeset.github.io"`
+   - macOS: `launchctl setenv OLLAMA_ORIGINS "https://janeset.github.io"`
+   - Linux: add `Environment="OLLAMA_ORIGINS=https://janeset.github.io"` to the ollama service, then restart it
 3. In Job tracker: **Settings**, **Drafting with**, **Local model**. Server address `http://localhost:11434/v1`,
    the model you pulled (for example `llama3.1:8b`), then **Test connection**.
 
@@ -42,7 +48,10 @@ A web page may only talk to a local model that allows it.
 
 1. In the Developer tab (the server), start the server and switch on **Enable CORS**.
 2. In Job tracker: server address `http://localhost:1234/v1` and the model name, then **Test connection**.
-   If LM Studio runs on another computer, use that computer's address, for example `http://192.168.2.132:1234/v1`.
+   If LM Studio runs on another computer, use that computer's address, for example `http://192.168.2.132:1234/v1`,
+   and switch on **Serve on Local Network** in LM Studio. Because the site is HTTPS and LM Studio is plain HTTP,
+   a model on another computer only works in Chrome and Edge (after you allow local network access);
+   other browsers block it. A model on the same computer (`localhost`) works in every browser.
 
 ### Web search for Find jobs (LM Studio 0.4 or newer)
 
@@ -76,24 +85,25 @@ Then in **Find jobs**, pick **AI search**. A search can take several minutes. Jo
 when the model didn't search at all, and it removes any link that wasn't in the search results, so you
 aren't sent to a page the model made up. Still check each posting before you apply.
 
-### Opening the page from a local web address
-
-Opening the page from a local web address instead of the file also works, and some browsers handle it
-better. From this folder, run:
-
-```
-python -m http.server 8770
-```
-
-then go to http://localhost:8770/ (Ollama allows localhost pages without `OLLAMA_ORIGINS`).
-
 ## Privacy
 
 Prompts for a chat website have your name, email, phone, address and links replaced with placeholders,
 which are put back when you paste the reply. Nothing else leaves this page, except what you send to
-your own local model.
+your own local model. GitHub serves the page but never sees what you put into it.
 
----
+Browsers keep a site's saved data by its address, and every GitHub Pages site of the same account shares
+`janeset.github.io`. Only publish pages you trust under this account.
 
-This folder is built by `tools/sync_projects.py` in the Flask project, from the Django project's page.
-Don't edit `index.html` by hand: change the sources and rebuild.
+## Publishing (for the repository owner)
+
+GitHub Pages is free for public repositories, so everything in this repository is public: never commit
+real resumes, trackers or personal details. The guide screenshots use made-up data.
+
+1. On GitHub: **Settings**, **Pages**, **Build and deployment**, Source **Deploy from a branch**,
+   then pick the branch and the **/ (root)** folder, and **Save**.
+2. A minute or two later the site is at https://janeset.github.io/job-tracker-webapp/. Every push to that
+   branch publishes again.
+
+`.nojekyll` tells GitHub Pages to serve the files as they are. There is no build step: `index.html` is the app.
+To try a change before pushing, serve this folder from any local web server, for example
+`python -m http.server 8770`, and open http://localhost:8770/.

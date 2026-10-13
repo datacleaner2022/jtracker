@@ -2113,7 +2113,7 @@ button,.btn,.views button,.inuse-item,.slbar-toggle{-webkit-user-select:none;use
         <label>Model<input type="text" id="lModel"></label>
         <label>API key (usually blank)<input type="password" id="lKey" autocomplete="off"></label>
         <label>Web search plugin (LM Studio, optional)<input type="text" id="lWeb" placeholder="e.g. exa"></label>
-        <p class="note">With a web search plugin set up in LM Studio’s mcp.json, Find jobs can search the web with your local model. README.md next to this page has the steps.</p>
+        <p class="note">With a web search plugin set up in LM Studio’s mcp.json, Find jobs can search the web with your local model. <a href="https://github.com/janeset/job-tracker-webapp#readme" target="_blank" rel="noopener">The setup steps</a> show how.</p>
         <p class="note">Ollama: http://localhost:11434/v1 and a model you’ve pulled, e.g. llama3.1:8b. LM Studio: http://localhost:1234/v1 with the server started.</p>
       </div>
       <div class="row2"><button class="btn small" type="button" id="testAi">Test connection</button><span class="note" id="testOut"></span></div>
@@ -2190,8 +2190,7 @@ button,.btn,.views button,.inuse-item,.slbar-toggle{-webkit-user-select:none;use
     <div class="row2 end"><button class="btn" value="cancel" type="button" id="setCancel">Cancel</button><button class="btn primary" type="button" id="setSave">Save settings</button></div>
   </form>
 </dialog>
-<!-- Job tracker, static edition. Built by tools/sync_projects.py in the Flask project: edit the sources, not this file. -->
-<script>window.JL_GUIDE={"sections": [{"id": "start", "title": "Start Job tracker", "intro": "This edition of Job tracker is one web page that runs in your browser. There's nothing to install, and everything you add stays in this browser, on this computer.", "steps": [{"text": "Open the jobline-static folder and double-click **index.html**. It opens in your browser. Chrome and Edge work best; Firefox and Safari work too."}, {"text": "Bookmark the page and use the same browser each time: your tracker, resumes and documents are kept in that browser."}, {"text": "On a fresh start the banner at the top says what is missing: a tracker, a resume and an AI mode. The next steps set up all three, in about five minutes.", "img": "01-first-run.jpg", "caption": "A fresh start: no tracker, no resume and no AI mode yet."}]}, {"id": "mode", "title": "Choose how Job tracker uses AI", "intro": "Job tracker can write tailored resumes and cover letters, research companies and search the web for jobs. Pick how it does that. You can change it any time.", "steps": [{"text": "Click **Settings** at the top right. On the **General** tab, find **Drafting with**. The badge next to Settings always shows the mode in use.", "img": "02-settings-free-chat.jpg", "caption": "Settings, General: the AI modes under Drafting with."}, {"text": "**Free chat (copy and paste)** needs no key and costs nothing. It works with a free ChatGPT or Claude account. Job tracker writes each prompt for you: click **Copy prompt**, paste it into a new chat, copy the whole reply and paste it back into Job tracker. It does the rest, from formatting to the Word and PDF files. Your name, email, phone and address are swapped for placeholders in the prompt and put back when you paste the reply."}, {"text": "**Local model** runs a free AI on your own computer with Ollama or LM Studio, so nothing leaves it. It can't search the web. Install one of them and let this page talk to it: for Ollama, set **OLLAMA_ORIGINS** to * and restart Ollama; in LM Studio, switch on **Enable CORS** in the server settings. Then enter the **Server address** (Ollama: http://localhost:11434/v1) and the **Model**, and click **Test connection**.", "img": "04-settings-local.jpg", "caption": "Local model: the address and model of Ollama or LM Studio."}, {"text": "Not sure? Start with **Free chat**. It costs nothing, and you can switch to a local model later without losing anything."}]}, {"id": "resume", "title": "Add your resume", "intro": "Everything Job tracker writes for you is built from your own resume. It never invents experience you don't have.", "steps": [{"text": "In **Settings**, **General**, scroll to **Your resume** and click **Upload a resume**. A Word file (.docx) works best; a text-based PDF, .txt or .md also works. You can also use the **Upload resume** button in the banner."}, {"text": "Job tracker keeps the text of your resume in this browser and shows which resume is in use. Your original file is never changed. You can upload several resumes and pick a different one for a particular job.", "img": "05-resume.jpg", "caption": "Your resume, ready to use."}]}, {"id": "tracker", "title": "Create your tracker", "intro": "Your tracker is an Excel file with every job you're considering and where each application stands. Job tracker reads it and keeps it up to date.", "steps": [{"text": "In **Settings**, open **Local files** and click **Create a new tracker**. Job tracker makes a ready-to-use spreadsheet, with dropdowns, colours and a summary sheet. To keep it on your computer, use **Save as a file** (Chrome and Edge) or **Download tracker** in the bar under the header.", "img": "06-create-tracker.jpg", "caption": "Settings, Local files: create the tracker, or open its folder."}, {"text": "Already have a tracker? Click **Open a tracker file** (in the banner, or in Settings, Local files) and choose your Job_Search_Tracker.xlsx. In Chrome and Edge, Job tracker stays linked to the file and saves every change straight into it. In other browsers, a bar under the header reminds you to **Download tracker** after making changes."}, {"text": "You can open the tracker in Excel at any time. Close it again before you make changes in Job tracker. When the file is linked, changes you save in Excel show up in Job tracker within a few seconds."}, {"text": "Once the tracker has jobs in it, Home shows what to do next: roles waiting for you, follow-ups that are due and recent changes.", "img": "07-home.jpg", "caption": "Home, once your tracker has jobs."}]}, {"id": "find", "title": "Find jobs", "intro": "Open **Find jobs**. Job tracker writes a search prompt for a free ChatGPT or Claude chat, which searches the web for you. Drafting keeps the AI mode from Settings.", "steps": [{"text": "Fill in **What you're looking for**: roles or keywords, where, how far, work model, how recent, minimum pay and how many results.", "img": "08-find-jobs.jpg", "caption": "Find jobs: your search settings."}, {"text": "**GPT/Claude prompts** works with a free chat. Click **Write the search prompt**, copy it into ChatGPT or Claude with web search switched on, paste the whole reply back and click **Generate tracker**.", "img": "10-chat-prompt.jpg", "caption": "GPT/Claude prompts: copy the prompt, paste the reply."}, {"text": "Results show the fit with your resume, what they ask for and any gaps. Tick the ones you like and click **Add to tracker**, or **Generate tracker** to save them as a new tracker file. Each result links to the real posting: check it before you apply.", "img": "11-results.jpg", "caption": "Results, ready to add to your tracker."}, {"text": "Found a job yourself? Paste it under **Add a posting you found** and Job tracker fills in the details and the fit for you."}]}, {"id": "apply", "title": "Apply", "intro": "**Applications** lists every job in your tracker, best to apply for first, with where each one stands.", "steps": [{"text": "Click a job to see what they ask for, where your resume matches and the gaps to cover. The closing date shows when the posting gives one, and **Company careers page** opens the employer's own jobs page. Use the filters and sort to narrow the list.", "img": "12-applications.jpg", "caption": "Applications: the list and one job's details."}, {"text": "**Draft cover letter** and **Craft resume** write versions tailored to this job, using only what's in your resume. Each one is made as a Word file and a PDF, kept with the job: **Download Word** and **Download PDF** save them to your computer, **Open PDF** shows it in a new tab and **Open folder** lists everything kept for the job. You can edit the text and save again.", "img": "13-drafts.jpg", "caption": "A tailored cover letter, saved as Word and PDF."}, {"text": "**Build the kit** does both at once, plus ready-to-paste answers to common application questions."}, {"text": "**Research the company** and **Interview prep** open the job's company page, with a briefing and your interview questions. See **Prepare for interviews** below.", "img": "14-research.jpg", "caption": "A company briefing."}, {"text": "After applying, click **Mark as applied today**. Keep the status, next step and follow-up date up to date: Job tracker writes them into your tracker and reminds you on Home when a follow-up is due. **Follow-ups to calendar** adds the dates to your calendar."}]}, {"id": "interview", "title": "Prepare for interviews", "intro": "**Interview prep** builds a guide for each job: a briefing on the company and role, and the questions you're likely to get, with a practice mode that gives feedback on your answers.", "steps": [{"text": "Open the **Interview prep** tab. Your jobs are grouped by how soon prep matters: **Calls and interviews** first, then **Applied, waiting to hear**, and **Still to apply** folded away underneath. Click **Start prep** on a job, or **Open prep** once its guide is ready. You can also click **Interview prep** on a job in Applications."}, {"text": "On the company page, click **Build prep**. With an API key or a local model, Job tracker builds the briefing and your interview questions by itself in a minute or two. In free chat mode it writes one prompt for both: copy it into your chat (turn on **web search** for current reviews and news), then paste the whole reply back and both tabs fill in."}, {"text": "**Company and role** covers what they do, where they're heading, what it's like to work there, how they interview, how to prepare, questions to ask and things to check before accepting. **Look it up yourself** has one-click links to ratings, reviews, interview reports, pay and LinkedIn searches."}, {"text": "**Interview questions** has your 60-second pitch, the questions they're likely to ask, stories from your resume (each says which questions it's good for), technical topics to review, your gaps and how to talk about them, and questions to ask them."}, {"text": "Click **Practise** next to a question, type your answer the way you'd say it, and click **Get feedback**. You get what works, what to tighten and a stronger version built only from your resume."}, {"text": "When the AI searched the web, the pages it used are listed as sources. The citation marks ChatGPT adds when you copy a reply, like [1] and its list of links, are tidied away for you. **Rebuild prep** makes a fresh guide any time."}]}, {"id": "offers", "title": "Compare offers", "intro": "When offers arrive, **Offers** puts them side by side.", "steps": [{"text": "Start from a job in your tracker or a blank offer, then add pay, bonus, benefits and anything else that matters. The best figure in each row is highlighted, and Job tracker can help you prepare a negotiation.", "img": "16-offers.jpg", "caption": "Offers, side by side."}]}, {"id": "settings", "title": "Make it yours", "intro": "Settings has four tabs: General, Appearance, Local files and Prompts.", "steps": [{"text": "**Appearance** changes the theme (or matches your computer's light and dark), the accent colour, the text size and animations. Changes apply right away.", "img": "15-appearance.jpg", "caption": "Settings, Appearance."}, {"text": "**Prompts** has ready-made prompts for free ChatGPT and Claude: create a tracker, find jobs and add them, update your progress or check which listings are still open. Paste a chat's reply under **Got rows back from the chat?** to add the jobs to your tracker.", "img": "17-prompts.jpg", "caption": "Settings, Prompts: tracker prompts for free chats."}, {"text": "**General** also has hidden companies (their listings are left out everywhere), extra details to mention in drafts, and how many days to wait before a follow-up."}, {"text": "**Local files** opens or downloads your tracker, lists your documents and backs up everything Job tracker keeps in this browser. Download a backup now and then: clearing your browsing data also clears Job tracker."}]}, {"id": "help", "title": "If something isn't right", "intro": "", "steps": [{"text": "**\"Couldn't save into the file\"**: the tracker may be open in Excel. Close it there, then press **Save** in the bar under the header."}, {"text": "**Your changes in Excel don't show**: save the file in Excel. When the tracker is linked (Chrome and Edge), Job tracker notices within a few seconds; otherwise open it again with **Open a tracker file**."}, {"text": "**A draft or search didn't work**: check the mode badge at the top, then use **Test connection** in Settings. In Free chat mode, make sure you pasted the whole reply."}, {"text": "**Something went wrong with the tracker**: Job tracker keeps a copy before every change. Settings, Local files, **Open folder** next to Tracker folder lists them to download."}]}], "images": ["01-first-run.jpg", "02-settings-free-chat.jpg", "04-settings-local.jpg", "05-resume.jpg", "06-create-tracker.jpg", "07-home.jpg", "08-find-jobs.jpg", "10-chat-prompt.jpg", "11-results.jpg", "12-applications.jpg", "13-drafts.jpg", "14-research.jpg", "15-appearance.jpg", "16-offers.jpg", "17-prompts.jpg"]};</script>
+<!-- Job tracker, GitHub Pages edition: one static page, no server. Everything is kept in the browser. -->
 <script>
 (function(){
 "use strict";
@@ -2699,7 +2698,21 @@ function buildIcs(events) {
 
 /* ---------- ai.py: the prompts, the reply parsers, and talking to a local model ---------- */
 const NOTES_MARK = "=== NOTES ===";
-const CORS_HINT = "if it is running, it may be turning this page away. For Ollama, set OLLAMA_ORIGINS (see README.md next to this page); for LM Studio, switch on CORS in its server settings.";
+const SETUP_URL = "https://github.com/janeset/job-tracker-webapp#readme";
+const CORS_HINT = "if it is running, it may be turning this page away. For Ollama, set OLLAMA_ORIGINS to this site's address (" + location.origin + "); for LM Studio, switch on CORS in its server settings. If the browser asked to let this site reach devices on your local network, allow it. Setup steps: " + SETUP_URL;
+
+/* This page is served over HTTPS (GitHub Pages) and the local model over plain HTTP. Browsers allow that for
+   localhost, but a model on another computer (a 192.168.x.x address) counts as mixed content: Chrome and Edge only
+   allow it when the request says it's for the local network (targetAddressSpace), after asking the person once.
+   Browsers that don't know the option ignore it; one that rejects it gets the plain request. */
+const isLoopback = h => /^(localhost|127(\.\d+){3}|\[::1\])$/i.test(h) || /\.localhost$/i.test(h);
+async function localFetch(url, init) {
+  let host = "";
+  try { host = new URL(url).hostname; } catch (e) {}
+  if (!host || isLoopback(host)) return _fetch(url, init);
+  try { return await _fetch(url, Object.assign({ targetAddressSpace: "local" }, init)); }
+  catch (e) { if (e && e.name === "TypeError" && /targetAddressSpace/i.test(e.message || "")) return _fetch(url, init); throw e; }
+}
 
 /* Text pieces as the local model writes them (an OpenAI-compatible /chat/completions stream). */
 async function* stream(s, prompt, signal) {
@@ -2710,7 +2723,7 @@ async function* stream(s, prompt, signal) {
   if (cfg.api_key) headers.authorization = "Bearer " + cfg.api_key;
   let res;
   try {
-    res = await _fetch(base + "/chat/completions", { method: "POST", headers, signal,
+    res = await localFetch(base + "/chat/completions", { method: "POST", headers, signal,
       body: JSON.stringify({ model: cfg.model, stream: true, messages: [{ role: "user", content: prompt }] }) });
   } catch (e) {
     if (e && e.name === "AbortError") throw e;
@@ -4276,14 +4289,13 @@ async function filesIn(folder) {
 function delFileUrl(rel) { if (fileUrls[rel]) { URL.revokeObjectURL(fileUrls[rel]); delete fileUrls[rel]; } }
 
 /* ---------- How to use: this edition's own guide ----------
-The desktop guide (engine/guide.py, adapted by GUIDE_EDITS into window.JL_GUIDE) describes the desktop app. This page
-has its own tabs, wording and AI modes, so /api/guide serves the sections below instead. Same shape as guide.py:
-id, title, intro, numbered steps; **bold** only. Screenshots: static_page/guide/st-*.jpg (made-up data only), copied into jobline-static/guide by the build. */
+/api/guide serves the sections below: id, title, intro, numbered steps; **bold** only.
+Screenshots: guide/st-*.jpg (made-up data only). */
 const STATIC_GUIDE = [
   { id: "start", title: "Start Job tracker",
     intro: "Job tracker is one web page that runs in your browser. There's nothing to install, and everything you add stays in this browser, on this computer.",
     steps: [
-      { text: "Open the **jobline-static** folder and double-click **index.html**. It opens in your browser. **Chrome** and **Edge** work best: they can save your files straight into a folder on your computer." },
+      { text: "Go to the Job tracker site, **janeset.github.io/job-tracker-webapp**. **Chrome** and **Edge** work best: they can save your files straight into a folder on your computer." },
       { text: "Bookmark the page and use the same browser each time. Your resume, job tracker file and documents are kept in that browser, so another browser starts empty." },
       { text: "On a fresh start, **Home** shows three steps: **upload your resume**, **search for jobs** to create your job tracker file, then **see your applications**. Each step gets a tick when it's done.", img: "st-01-home-fresh.jpg", caption: "A fresh start: three steps on Home." },
       { text: "Under the tabs, **Resume** and **Job tracker file** show what's in use, with a green dot. Click either one to change it.", img: "st-11-home.jpg", caption: "Home with a resume and a job tracker file in use." },
@@ -4295,7 +4307,7 @@ const STATIC_GUIDE = [
       { text: "**Free chat (copy and paste)** uses a free ChatGPT or Claude account in another tab. No key, no cost, and it can search the web for jobs. The next section shows how it works." },
       { text: "**Local model** uses an AI running on your own computer (Ollama or LM Studio) through its API. Job tracker talks to it directly, so drafts appear without copying anything, and nothing leaves your computer. On its own it can't search the web, but in LM Studio a web search plugin lets it search for **Find jobs**. See **Local model** below to set it up." },
       { text: "Not sure? Start with **Free chat**. Finding jobs uses the chat prompts on this page, unless your local model has a web search plugin." },
-      { text: "Paid API keys for Claude or ChatGPT are only in the desktop version of Job tracker." },
+      { text: "There are no paid API keys here. The site has no server of its own, so it never holds a key, and your data only goes to your chat or your own model." },
     ] },
   { id: "freechat", title: "Free chat: copy and paste",
     intro: "In free chat mode Job tracker writes the prompt, your chat does the thinking, and Job tracker turns the reply into files. It works for resumes, cover letters, company research, interview prep and finding jobs.",
@@ -4311,11 +4323,11 @@ const STATIC_GUIDE = [
     intro: "A local model is a free AI that runs on your own computer. Job tracker sends it requests through its API (the same kind ChatGPT uses), so drafts come back by themselves and nothing is sent over the internet.",
     steps: [
       { text: "Install **Ollama** (ollama.com) or **LM Studio** (lmstudio.ai) and download a model. With Ollama, run **ollama pull llama3.1:8b** in a terminal. A computer with 16 GB of memory or more works best." },
-      { text: "Let this page talk to it. **Ollama**: set the environment variable **OLLAMA_ORIGINS** to an asterisk (the * character) and restart Ollama. **LM Studio**: start the server in the Developer tab and switch on **Enable CORS**. Without this the browser blocks the connection. README.md next to this page has the details." },
+      { text: "Let this site talk to it. **Ollama**: set the environment variable **OLLAMA_ORIGINS** to **https://janeset.github.io** (this site's address) and restart Ollama. **LM Studio**: start the server in the Developer tab and switch on **Enable CORS**. Without this the browser blocks the connection. The first time, Chrome and Edge ask whether this site may reach devices on your local network: click **Allow**. The README on GitHub (github.com/janeset/job-tracker-webapp) has the details." },
       { text: "In **Settings**, **General**, choose **Local model**. Fill in **Server address** (Ollama: http://localhost:11434/v1, LM Studio: http://localhost:1234/v1) and **Model** (the name you downloaded, for example llama3.1:8b). Leave **API key** blank unless your server asks for one.", img: "st-03-settings-local.jpg", caption: "Local model: the server address and model of Ollama or LM Studio." },
       { text: "Click **Test connection**. When it says it worked, click **Save settings**. The badge at the top right now says **Local model**." },
       { text: "Now **Craft resume**, **Draft cover letter**, research and interview prep write straight into Job tracker. Company research comes from what the model already knows." },
-      { text: "To let it search for jobs, add a web search plugin in LM Studio (README.md next to this page has the steps) and fill in **Web search plugin** in Settings, for example exa. Then pick **AI search** in **Find jobs**. Job tracker removes any link the model didn't find in its searches." },
+      { text: "To let it search for jobs, add a web search plugin in LM Studio (the README on GitHub has the steps) and fill in **Web search plugin** in Settings, for example exa. Then pick **AI search** in **Find jobs**. Job tracker removes any link the model didn't find in its searches." },
       { text: "If a draft stops or is slow, try a smaller model, or switch back to **Free chat** for that task." },
     ] },
   { id: "resume", title: "Add your resume",
@@ -4382,7 +4394,7 @@ const STATIC_GUIDE = [
     intro: "",
     steps: [
       { text: "**Couldn't save into the file**: the job tracker file may be open in Excel. Close it there, then click **Save** in the bar under the tabs." },
-      { text: "**The local model doesn't connect**: check it's running, the address and model name in Settings, and that CORS is on (OLLAMA_ORIGINS for Ollama, Enable CORS in LM Studio). Then click **Test connection** again." },
+      { text: "**The local model doesn't connect**: check it's running, the address and model name in Settings, that CORS is on (OLLAMA_ORIGINS for Ollama, Enable CORS in LM Studio), and that you allowed local network access when the browser asked (the icon at the left of the address bar). Then click **Test connection** again." },
       { text: "**A pasted reply wasn't understood**: copy the chat's whole reply, not just part of it, and paste it again. For job searches, make sure web search was on. For **Build prep**, the reply needs both parts: the company briefing and the interview guide." },
       { text: "**Something went wrong with the job tracker file**: Job tracker keeps a copy before every change. Settings, Local files, **Job tracker file folder** lists the backups to download." },
       { text: "**Everything is gone**: you may be in another browser, a private window, or your browser's data was cleared. Use the same browser, and restore a backup from Settings, Local files." },
@@ -4393,7 +4405,7 @@ const STATIC_GUIDE = [
 const CLOSED_STATUSES = new Set(["Rejected", "Withdrawn", "Accepted", "No Response"]);
 const INTERVIEW_STATUSES = new Set(["Phone Screen", "Interview Scheduled", "Interviewing"]);
 const WRITING_KINDS = ["resume", "letter", "kit", ...Object.keys(MESSAGE_KINDS)];
-const NEEDS_DESKTOP = "needs the desktop version of Job tracker (it uses an API key or reads web pages, which a page in the browser can't do).";
+const NOT_ON_WEB = "isn't available here: it needs a server (an API key or reading web pages), and this site is only a page in your browser.";
 
 async function jobById(jid) {
   const data = await readTracker();
@@ -4954,7 +4966,7 @@ async function localWebChat(s, prompt, signal) {
   if (cfg.api_key) headers.authorization = "Bearer " + cfg.api_key;
   let res;
   try {
-    res = await _fetch(base + "/api/v1/chat", { method: "POST", headers, signal,
+    res = await localFetch(base + "/api/v1/chat", { method: "POST", headers, signal,
       body: JSON.stringify({ model: cfg.model, input: prompt, integrations: [cfg.web_plugin] }) });
   } catch (e) {
     if (e && e.name === "AbortError") throw e;
@@ -5099,7 +5111,7 @@ async function apiTestAi() {
 // this edition's own guide and screenshots (05c-guide.js; the images are copied from static_page/guide by the build)
 async function apiGuide() { return { sections: STATIC_GUIDE, images: STATIC_GUIDE.flatMap(s => s.steps.map(st => st.img)).filter(Boolean) }; }
 
-const notHere = what => async () => { throw new ApiError(what + " " + NEEDS_DESKTOP, 501); };
+const notHere = what => async () => { throw new ApiError(what + " " + NOT_ON_WEB, 501); };
 const ROUTES = {
   "/api/state": apiState, "/api/version": apiVersion, "/api/progress": apiProgress, "/api/draft": apiDraft, "/api/save": apiSave,
   "/api/download": apiDownload, "/api/open": req => openThing(req.body), "/api/research/get": apiResearchGet, "/api/research": apiResearch,
@@ -5423,7 +5435,7 @@ function setupPage() {
     $("slErase").onclick = () => eraseAll().catch(e => note(e.message));
   }
   const local = document.querySelector('.pv[data-p="local"]');
-  if (local) local.insertAdjacentHTML("beforeend", `<p class="note">Your model must let this page talk to it. Ollama: set OLLAMA_ORIGINS to * and restart Ollama. LM Studio: switch on Enable CORS in its server settings. README.md next to this page has the steps.</p>`);
+  if (local) local.insertAdjacentHTML("beforeend", `<p class="note">Your model must let this site talk to it. Ollama: set OLLAMA_ORIGINS to ${esc(location.origin)} and restart Ollama. LM Studio: switch on Enable CORS in its server settings. When the browser asks to let this site reach devices on your local network, click Allow. <a href="${SETUP_URL}" target="_blank" rel="noopener">The setup steps</a> have the details.</p>`);
   // "Open a tracker file" next to every "Create a new tracker" button the page draws
   const addOpen = root => root.querySelectorAll('[data-act="create-tracker"]').forEach(b => {
     if (b.nextElementSibling && b.nextElementSibling.dataset.act === "sl-open-tracker") return;
@@ -7894,7 +7906,7 @@ function engineToggle(engine){
 function bindEngine(){
   document.querySelectorAll("[data-engine]").forEach(b=>b.onclick=()=>{
     const e=b.dataset.engine;
-    if(e==="api"&&!apiProvider()&&!localWeb()){toast("To search the web with AI, choose Local model in Settings and add a web search plugin (README.md has the steps).");openSettings();return}
+    if(e==="api"&&!apiProvider()&&!localWeb()){toast("To search the web with AI, choose Local model in Settings and add a web search plugin (Settings links to the setup steps).");openSettings();return}
     try{localStorage.setItem("jobline-find-engine",e)}catch(x){}
     renderSearch();
   });
