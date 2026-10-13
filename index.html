@@ -167,6 +167,7 @@ h1::before{content:"";width:22px;height:22px;border:1.5px solid var(--amber);bor
 .track textarea{min-height:70px;resize:vertical}
 .saved{font-size:12.5px;color:var(--green);min-height:18px;margin-top:6px}
 .savedfile{margin-top:8px;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+pre.exres{white-space:pre-wrap;word-break:break-word;margin:0;padding:14px 16px;max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2);color:var(--ink);font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
 .ats{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2)}
 .ats .atshead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:8px}
 .ats .atshead span{color:var(--muted);font-size:13px}
@@ -5742,6 +5743,10 @@ function buildResumeTop(root) {
   fillFolder(folderBox).catch(() => folderBox.remove());
   let at = folderBox;
   docs.forEach(([, box]) => { at.after(box); at = box; });
+  const examples = document.createElement("section");
+  examples.className = "panel rspanel rsdocs rsexamples";
+  at.after(examples);
+  fillExamples(examples);
   savedDocs().then(all => docs.forEach(([kind, box, empty]) => fillDocs(box, all.filter(d => d.kind === kind), empty))).catch(() => docs.forEach(([, box]) => box.remove()));
 }
 
@@ -6100,6 +6105,189 @@ function fillDocs(box, list, empty) {
     const d = list[+b.dataset.i], f = d[b.dataset.f];
     if (b.dataset.f === "pdf") { const w = window.open(fileInfo(f.rel, f.blob).url, "_blank"); if (!w) downloadBlob(f.blob, f.name); }
     else downloadBlob(f.blob, f.name);
+  });
+}
+
+/* ---------- example ATS resumes (made-up people, example.com addresses, 555 numbers) ----------
+Shown on the Resume tab: what a resume an ATS reads well looks like, in the same layout Craft resume makes. Each one has the
+posting it was written for, so its ATS check can be shown too. */
+const EXAMPLE_RESUMES = [
+  { id: "dev", title: "Software Developer", about: "Three to five years of experience, building web services in C# and .NET.",
+    job: { role: "Software Developer", requirements: "3+ years C#, .NET; SQL Server; REST APIs; Azure; Git; unit testing; Agile; Docker" },
+    text: `Daniel Okafor
+daniel.okafor@example.com | 519-555-0142 | Kitchener, ON | linkedin.com/in/daniel-okafor-example
+
+SUMMARY
+Software Developer with five years of experience building and maintaining web applications and REST APIs in C# and .NET. Works across the stack with SQL Server, Azure and Docker, writes unit tests as part of every change, and has shipped in Agile teams of four to ten developers. Known for clear code reviews and for turning vague requests into small, testable pieces of work.
+
+SKILLS
+Languages: C#, JavaScript, TypeScript, SQL
+Frameworks: .NET 8, ASP.NET Core, Entity Framework Core, React
+Databases: SQL Server, PostgreSQL, Redis
+Cloud and DevOps: Azure App Service, Azure Functions, Docker, Continuous Integration and Delivery (CI/CD), Azure DevOps, Git
+Testing: unit testing with xUnit and NUnit, integration testing, test-driven development (TDD)
+Ways of working: Agile, Scrum, code review, technical documentation
+
+EXPERIENCE
+Software Developer, Northfield Logistics | Waterloo, ON | Mar 2022 - Present
+- Built and maintain 14 REST APIs in C# and ASP.NET Core that handle 2 million shipment updates a day
+- Moved three services from virtual machines to Docker containers on Azure, cutting deployment time from 40 minutes to 6
+- Raised unit test coverage of the billing service from 35% to 82% with xUnit, and added the tests to the CI/CD pipeline
+- Tuned slow SQL Server queries and indexes, bringing the main tracking page from 4.2 seconds to under 1 second
+- Mentor two junior developers and lead the team's weekly code review session
+
+Junior Software Developer, Brightline Health | Guelph, ON | Jun 2019 - Feb 2022
+- Developed features for a patient booking web application in .NET and React used by 60 clinics
+- Wrote stored procedures and Entity Framework Core migrations for SQL Server
+- Built an Azure Functions job that sends appointment reminders, reducing missed visits by 18%
+- Took part in two-week Agile sprints, estimating stories and demonstrating work to clinic staff
+
+PROJECTS
+Open-source contributor, Fluent validation library | Remote | Jan 2021 - Present
+- Added and documented two validators used by more than 3,000 projects
+
+EDUCATION
+Bachelor of Computer Science, University of Guelph | Guelph, ON | 2019
+
+CERTIFICATIONS
+Microsoft Certified: Azure Developer Associate (AZ-204) | 2023` },
+
+  { id: "mgr", title: "Software Engineering Manager", about: "Leads several teams: people management, hiring, delivery and architecture.",
+    job: { role: "Software Engineering Manager", requirements: "people management; hiring; Agile; Scrum; Jira; CI/CD; AWS; microservices; roadmap planning; stakeholder management" },
+    text: `Maria Delgado
+maria.delgado@example.com | 416-555-0187 | Toronto, ON | linkedin.com/in/maria-delgado-example
+
+SUMMARY
+Software Engineering Manager with 12 years in software, the last five leading teams of 6 to 22 engineers. Combines people management and hiring with hands-on knowledge of AWS, microservices and Continuous Integration and Delivery (CI/CD). Runs roadmap planning with product and sales, and keeps stakeholders informed with plain, regular updates. Builds teams that ship often and keep their people.
+
+SKILLS
+Leadership: people management, hiring and interviewing, coaching, performance reviews, career development
+Delivery: Agile, Scrum, Kanban, Jira, roadmap planning, OKRs, budgeting
+Stakeholder management: executive reporting, product partnership, vendor management
+Technical: AWS, microservices, CI/CD, Java, Python, PostgreSQL, Kubernetes, Docker
+Practices: incident management, architecture review, engineering metrics
+
+EXPERIENCE
+Software Engineering Manager, Polaris Payments | Toronto, ON | Apr 2021 - Present
+- Lead three teams and 22 engineers who build the payments platform on AWS microservices
+- Hired 11 engineers in two years, writing the interview loop and training 15 interviewers
+- Introduced Scrum and quarterly roadmap planning with product, raising on-time delivery from 58% to 87%
+- Cut production incidents by 45% by adding CI/CD quality gates, on-call reviews and service ownership
+- Report progress, risks and budget to the VP of Engineering and finance stakeholders every month
+- Kept voluntary attrition under 5% a year through clear career paths and regular one-on-ones
+
+Engineering Team Lead, Polaris Payments | Toronto, ON | Jan 2019 - Mar 2021
+- Led a team of six engineers that split a monolith into eight Java microservices
+- Ran Agile ceremonies in Jira and coached two engineers into senior roles
+- Worked with stakeholders in sales and support to set priorities for a new merchant dashboard
+
+Senior Software Engineer, Maplewave Software | Waterloo, ON | Jun 2013 - Dec 2018
+- Designed and built PostgreSQL-backed services in Java and Python for a SaaS product with 400 business clients
+- Set up the company's first CI/CD pipeline and moved deployment from monthly to daily
+
+EDUCATION
+Bachelor of Applied Science, Computer Engineering, University of Waterloo | Waterloo, ON | 2013
+
+CERTIFICATIONS
+Certified ScrumMaster (CSM), Scrum Alliance | 2019
+AWS Certified Solutions Architect - Associate | 2022` },
+
+  { id: "hr", title: "HR Associate", about: "Early-career human resources: recruitment, onboarding and HRIS records.",
+    job: { role: "HR Associate", requirements: "recruitment coordination; onboarding; HRIS; employee records; Workday; Microsoft Excel; employment standards; confidentiality" },
+    text: `Aisha Thompson
+aisha.thompson@example.com | 905-555-0119 | Hamilton, ON | linkedin.com/in/aisha-thompson-example
+
+SUMMARY
+HR Associate with three years of experience in recruitment coordination, onboarding and HRIS administration for organizations of 300 to 900 employees. Keeps employee records accurate in Workday, builds reports in Microsoft Excel, and applies Ontario employment standards with care. Trusted with confidential information and known for a friendly, organized approach with candidates and staff.
+
+SKILLS
+Human resources: recruitment coordination, onboarding, offboarding, employee records, benefits enrolment
+Systems: Workday HRIS, ADP, Microsoft Excel (pivot tables, XLOOKUP), Microsoft Outlook, Teams
+Compliance: Ontario Employment Standards Act, confidentiality, privacy, health and safety training records
+Communication: candidate experience, employee questions, policy documentation
+
+EXPERIENCE
+HR Associate, Greenway Foods | Hamilton, ON | Feb 2023 - Present
+- Coordinate recruitment for 40 to 60 hourly and salaried roles a year, scheduling interviews and preparing offer letters
+- Run onboarding for new hires, from paperwork and Workday setup to first-day orientation, for an average of 12 hires a month
+- Maintain employee records in the HRIS and audit them each quarter, reducing data errors by 30%
+- Build monthly headcount and turnover reports in Microsoft Excel for the HR manager
+- Answer employee questions about benefits, leaves and employment standards, keeping every case confidential
+- Process offboarding for leavers, including exit interviews, final pay forms and system access removal, within two business days
+
+Human Resources Assistant, Lakeshore Community Services | Burlington, ON | Jun 2021 - Jan 2023
+- Supported recruitment coordination for 25 program roles, posting jobs and screening applications
+- Scanned and organized 1,200 paper employee records into the new HRIS within four months
+- Tracked health and safety training and reminded staff before certifications expired
+- Prepared onboarding packages and booked orientation sessions for new staff and volunteers
+
+EDUCATION
+Human Resources Management Diploma, Mohawk College | Hamilton, ON | 2021
+
+CERTIFICATIONS
+Certified Human Resources Professional (CHRP) candidate, Human Resources Professionals Association | 2024` },
+
+  { id: "admin", title: "Administrative Assistant", about: "Office administration: calendars, travel, records and bookkeeping support.",
+    job: { role: "Administrative Assistant", requirements: "calendar management; travel arrangements; Microsoft Office; Excel; data entry; customer service; bookkeeping; QuickBooks" },
+    text: `Jordan Lee
+jordan.lee@example.com | 226-555-0163 | London, ON | linkedin.com/in/jordan-lee-example
+
+SUMMARY
+Administrative Assistant with six years of experience supporting busy offices and senior managers. Handles calendar management, travel arrangements, data entry and front-desk customer service, and supports bookkeeping in QuickBooks. Skilled in Microsoft Office, especially Excel, Word and Outlook. Calm under pressure, careful with details, and good at keeping a team organized.
+
+SKILLS
+Office administration: calendar management, travel arrangements, meeting minutes, filing systems, office supplies
+Software: Microsoft Office (Excel, Word, Outlook, PowerPoint), QuickBooks Online, Google Workspace, Zoom
+Finance support: bookkeeping, invoicing, expense reports, accounts payable
+Data: data entry, record keeping, reports in Excel
+Customer service: reception, phone and email support, handling complaints politely
+
+EXPERIENCE
+Administrative Assistant, Riverbend Engineering | London, ON | Aug 2021 - Present
+- Manage calendars for three directors, booking about 40 meetings a week across time zones
+- Plan travel arrangements for 25 staff, keeping trips within policy and saving 12% on annual travel costs
+- Enter and reconcile invoices and expenses in QuickBooks Online and prepare month-end bookkeeping files
+- Built an Excel tracker for project documents that cut the time to find a file from minutes to seconds
+- Greet visitors and answer the main phone line, providing friendly customer service to clients and suppliers
+- Take and send out minutes for the weekly management meeting, and follow up on action items with each owner
+
+Office Administrator, Fairview Dental Clinic | St. Thomas, ON | May 2018 - Jul 2021
+- Booked and confirmed 60 patient appointments a day and kept the schedule full
+- Completed data entry for patient records and insurance claims with a 99% accuracy rate
+- Ordered office and clinical supplies and tracked spending in Excel
+- Trained two new receptionists on the phone system, booking software and office procedures
+
+EDUCATION
+Office Administration Diploma, Fanshawe College | London, ON | 2018
+
+CERTIFICATIONS
+Microsoft Office Specialist: Excel Associate | 2022` }
+];
+/* The Resume tab's panel of examples: open the PDF, download the Word file, or read the text and its ATS check. */
+function fillExamples(box) {
+  const stem = e => `Example ATS Resume - ${e.title} - ${(resumeBlocks(e.text)[0] || {}).s || ""}`;
+  const info = e => ({ title: stem(e), author: (resumeBlocks(e.text)[0] || {}).s || "", subject: "Resume: " + e.job.role, keywords: (atsCheck(e.text, e.job).keywords || { found: [] }).found.join(", ") });
+  const make = (e, f) => f === "pdf" ? buildPdf("resume", e.text, null, stem(e), info(e)) : buildDocx("resume", e.text, null, info(e));
+  box.innerHTML = `<h3>Example ATS resumes <span class="rscount">${EXAMPLE_RESUMES.length}</span></h3>
+    <p class="note" style="margin:0 0 10px">Made-up people, laid out the way Craft resume lays yours out: one column, standard headings and the posting's keywords. Each passes the ATS check for the posting it was written for.</p>
+    <ul class="rsdlist">` + EXAMPLE_RESUMES.map((e, i) => { const c = atsCheck(e.text, e.job);
+      return `<li><div class="rsdname"><b>${esc(e.title)}</b><span>${esc(e.about)} ATS check: ${c.passed} of ${c.total}${c.keywords ? `, ${c.keywords.pct}% of keywords` : ""}.</span></div>`
+        + `<div class="rsdbtn"><button class="btn small" type="button" data-i="${i}" data-f="view">View</button><button class="btn small" type="button" data-i="${i}" data-f="pdf">PDF</button><button class="btn small" type="button" data-i="${i}" data-f="docx">Word</button></div></li>`; }).join("") + `</ul>`;
+  box.querySelectorAll("[data-f]").forEach(b => b.onclick = async () => {
+    const e = EXAMPLE_RESUMES[+b.dataset.i], f = b.dataset.f;
+    if (f === "view") {
+      const c = atsCheck(e.text, e.job);
+      $("slDlgTitle").textContent = "Example: " + e.title;
+      box.ownerDocument.querySelector("#slDlg .sldbody").innerHTML = `<p class="note" style="margin:0 0 8px">Written for a posting titled “${esc(e.job.role)}” that asks for: ${esc(e.job.requirements.replace(/;/g, ","))}. ATS check: ${c.passed} of ${c.total} passed.</p>`
+        + `<pre class="exres">${esc(e.text)}</pre>`;
+      $("slDlg").showModal();
+      return;
+    }
+    const w = f === "pdf" ? window.open("", "_blank") : null;   // opened now, while the click still counts, and filled when the PDF is ready
+    try {
+      const blob = await make(e, f), name = stem(e) + (f === "pdf" ? ".pdf" : ".docx");
+      if (w) w.location.href = URL.createObjectURL(blob); else downloadBlob(blob, name);
+    } catch (err) { if (w) w.close(); note(err.message || "Couldn't make that file."); }
   });
 }
 
@@ -6494,7 +6682,7 @@ function renderDetail(){
   </div>
   <div class="sec letter" id="resumeSec">
     <h3>Resume for this job</h3>
-    <p class="note" style="margin-bottom:10px">Reorders and rewords your resume around what this employer asks for, using only experience you’ve already listed. It won’t add skills you don’t have. It’s written for applicant tracking systems (ATS): standard headings, one column, the posting’s own keywords, and an ATS check underneath. Save it as a Word file (using your resume’s font and margins) and a PDF, both in this job’s folder.</p>
+    <p class="note" style="margin-bottom:10px">Reorders and rewords your resume around what this employer asks for, using only experience you’ve already listed. It won’t add skills you don’t have. It’s written for applicant tracking systems (ATS): standard headings, one column, the posting’s own keywords, and an ATS check underneath. The Resume tab has example ATS resumes to compare with. Save it as a Word file (using your resume’s font and margins) and a PDF, both in this job’s folder.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn primary" type="button" id="resumeBtn">Craft resume</button>
       <button class="btn hidden" type="button" id="resumeStop">Stop</button>
