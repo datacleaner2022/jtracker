@@ -4,7 +4,9 @@ Job tracker as one web page, hosted for free on GitHub Pages: nothing to install
 
 **Open it:** https://janeset.github.io/job-tracker-webapp/
 
-Chrome and Edge work best; Firefox and Safari work too. The How to use guide (the **Guide** button) walks through it.
+Chrome and Edge work best; Firefox and Safari work too. The How to use guide (the **How to use** button) walks through it,
+starting with a five-minute video tour ([guide/tutorial.mp4](guide/tutorial.mp4)) that uses a made-up sample resume and
+free ChatGPT.
 
 ## How it works
 

@@ -167,6 +167,7 @@ h1::before{content:"";width:22px;height:22px;border:1.5px solid var(--amber);bor
 .track textarea{min-height:70px;resize:vertical}
 .saved{font-size:12.5px;color:var(--green);min-height:18px;margin-top:6px}
 .savedfile{margin-top:8px;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gsteps figure video{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:#0f1220}
 pre.exres{white-space:pre-wrap;word-break:break-word;margin:0;padding:14px 16px;max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2);color:var(--ink);font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
 .ats{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2)}
 .ats .atshead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:8px}
@@ -2594,16 +2595,18 @@ const ATS_HEADINGS = new Set(["summary", "professional summary", "profile", "car
   "projects", "key projects", "education", "education and training", "education & training", "certifications", "certificates", "licenses and certifications",
   "training", "professional development", "volunteer experience", "volunteering", "awards", "publications", "languages", "interests", "references"]);
 const KW_LEAD = /^(?:(?:strong|solid|proven|hands-on|demonstrated|excellent|good|working|deep|some|basic|prior)\s+)?(?:experience|knowledge|understanding|proficiency|familiarity|expertise|skills?|background|exposure)\s+(?:with|in|of|using)\s+/i;
-const KW_STOP = new Set(["experience", "skills", "knowledge", "ability", "years", "year", "plus", "asset", "required", "preferred", "etc", "strong", "excellent", "good", "team", "work", "working"]);
+const KW_STOP = new Set(["experience", "skills", "knowledge", "ability", "years", "year", "plus", "asset", "required", "preferred", "etc", "strong", "excellent", "good", "team", "work", "working", "equivalent", "related", "responsibilities"]);
+// the verbs and articles a chat's summary of a posting starts phrases with ("Requires a ...", "Emphasizes ...")
+const KW_VERB = /^(?:(?:requires?|emphasi[sz]es|includes?|prefers?|seeks?|needs?|wants?|values?|must have|nice to have|ideally|also|an?|the)\s+)+/i;
 const kwNorm = s => " " + String(s).toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").replace(/\.(?=\s|$)|(^|\s)\.(?!net)/g, " ").replace(/\s+/g, " ").trim() + " ";
 /* The keywords an ATS would look for: the known skills the posting asks for, then the short phrases in "What they ask for". */
 function postingKeywords(job) {
-  const asked = [job.requirements, job.role, job.category].map(x => String(x || "")).join(" ");
+  const asked = [job.requirements, job.role].map(x => String(x || "")).join(" ");   // not the category: that's your grouping, not the posting's
   const names = dropGeneral(skillsIn(asked)), out = SKILLS.filter(([n]) => names.includes(n)).map(([n, rx]) => ({ k: n, rx }));
   const seen = new Set(out.map(o => kwNorm(o.k)));
   for (let p of String(job.requirements || "").split(/[,;\n•·]|\s(?:and|or|plus)\s|\.\s/i)) {
-    p = p.replace(/\(.*?\)/g, " ").replace(/^[\s\-–*]+|[\s.:]+$/g, "")
-      .replace(/^\d+\s*\+?\s*(?:years?|yrs?)\s*(?:of\s+)?(?:experience\s+)?(?:with|in|of|using)?\s*/i, "").replace(KW_LEAD, "").trim();
+    p = p.replace(/\(.*?\)/g, " ").replace(/^[\s\-–*]+|[\s.:]+$/g, "").replace(KW_VERB, "")
+      .replace(/^\d+(?:\s*[–-]\s*\d+)?\s*\+?\s*(?:years?|yrs?)\s*(?:of\s+)?(?:experience\s+)?(?:with|in|of|using)?\s*/i, "").replace(KW_LEAD, "").trim();
     const words = p.split(/\s+/).filter(Boolean);
     if (!p || p.length < 2 || p.length > 40 || words.length > 4 || words.every(w => KW_STOP.has(w.toLowerCase()))) continue;
     if (out.some(o => o.rx && o.rx.test(p))) continue;                 // a known skill already covers it
@@ -3161,8 +3164,13 @@ const REF_LINK = /\[([^\]\n]+)\]\[([^\]\n]+)\]/g;
 const CHAT_MARK = /[^]*|【[^】\n]*】/g;
 const noUtm = url => url.replace(/([?&])utm_source=(?:chatgpt\.com|openai|claude\.ai)(&|$)/, (k, a, b) => b ? a : "").replace(/[?&]+$/, "");
 /* Take chat citation markers out of a pasted reply. Returns [clean text, [{title, url}] from the reference list]. */
+/* ChatGPT's newer citation chips copy as the source's name after the sentence ("... on-site. PEER Group"), sometimes
+   with a "+2" for more sources on the next line; its links can come as [text](<https://...>). */
+const CHIP_MORE = /\n[ \t]*\+\d+[ \t]*(?=\n|$)/g;
+const CHIP_NAME = /(?<!\b(?:e\.g|i\.e|etc|Inc|Ltd|Corp|Co|St|vs|Dr|Mr|Ms|Mrs|No))([.!?)])[ \t]+[A-Z][\w.&'’-]*(?:[ \t]+[A-Z][\w.&'’-]*){0,3}[ \t]*$/gm;
+const ANGLE_LINK = /\]\(<(https?:\/\/[^>\s]+)>\)/g;
 function splitCitations(text) {
-  let t = String(text || "");
+  let t = String(text || "").replace(CHIP_MORE, "").replace(ANGLE_LINK, "]($1)").replace(CHIP_NAME, "$1");
   const refs = {}, sources = [];
   for (const m of t.matchAll(REF_DEF)) {
     const url = noUtm(m[2]);
@@ -4087,8 +4095,10 @@ async function resumeCity() {
   for (const line of head) { const m = CITY_RX.exec(line); if (m) return `${m[1]}, ${m[2]}`; }
   return "";
 }
-// a resume section heading: a short line in capitals (SUMMARY, WORK EXPERIENCE, EDUCATION & TRAINING)
-const RESUME_HEADING = /^[A-Z][A-Z &\/,'()-]{2,40}$/;
+// a resume section heading: a short line in capitals (SUMMARY, WORK EXPERIENCE, EDUCATION & TRAINING), or a standard
+// heading in any case ("Experience", "Technical Skills:"), as Word resumes often have them
+const RESUME_CAPS = /^[A-Z][A-Z &\/,'()-]{2,40}$/;
+const RESUME_HEADING = { test: l => RESUME_CAPS.test(l) || ATS_HEADINGS.has(String(l).trim().toLowerCase().replace(/\s+/g, " ").replace(/:$/, "")) };
 
 const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 const wq = (el, tag) => [...el.getElementsByTagNameNS(W_NS, tag)];
@@ -4410,6 +4420,12 @@ function delFileUrl(rel) { if (fileUrls[rel]) { URL.revokeObjectURL(fileUrls[rel
 /api/guide serves the sections below: id, title, intro, numbered steps; **bold** only.
 Screenshots: guide/st-*.jpg (made-up data only). */
 const STATIC_GUIDE = [
+  { id: "video", title: "Watch the tutorial",
+    intro: "A five-minute tour of every feature, using a made-up sample resume and free ChatGPT. The replies in it are the ones ChatGPT really gave.",
+    steps: [
+      { text: "It follows one job search from start to finish: **add a resume**, **find jobs** with ChatGPT, **craft an ATS-ready resume** and a **cover letter**, **prepare for the interview**, and **make it yours** in Settings. The sections below go through each step in detail.",
+        video: "tutorial.mp4", poster: "tutorial.jpg", caption: "Job tracker tour, 5 minutes, with captions." },
+    ] },
   { id: "start", title: "Start Job tracker",
     intro: "Job tracker is one web page that runs in your browser. There's nothing to install, and everything you add stays in this browser, on this computer.",
     steps: [
@@ -5131,6 +5147,9 @@ async function apiSearchLocal(req) {
 }
 
 /* ---------- copy and paste mode ---------- */
+/* A chat website shows a plain-text reply as formatted text, and copying that (or a ChatGPT "Writing" block) joins lines
+   that had a single line break between them: a resume's headings run into the text. A code block is copied as written. */
+const CHAT_CODE_BLOCK = "\n\nPut your whole reply inside one code block (three backticks before and after it), so every line break survives when it's copied.";
 async function apiPrompt(req) {
   const b = req.body, kind = b.kind, s = await settings(), home = s.home_city, extra = s.about_me_extra;
   const out = (d, restore) => { if (restore && Object.keys(restore).length) d.restore = restore; return d; };
@@ -5142,7 +5161,10 @@ async function apiPrompt(req) {
     const job = await jobById(b.id || ""), [text, restore] = await promptResume(b.id, false);
     return out({ prompt: bothPrompt(job, text, true, extra), promptNoWeb: bothPrompt(job, text, false, extra) }, restore);
   }
-  if (WRITING_KINDS.includes(kind)) { const [prompt, restore] = await writingPrompt(b, true); return out({ prompt }, restore); }
+  if (WRITING_KINDS.includes(kind)) {
+    const [prompt, restore] = await writingPrompt(b, true);
+    return out({ prompt: ["resume", "kit"].includes(kind) ? prompt + CHAT_CODE_BLOCK : prompt }, restore);
+  }
   if (kind === "research") { const job = await jobById(b.id || ""); return { prompt: researchPrompt(job, true), promptNoWeb: researchPrompt(job, false) }; }
   if (kind === "salary") { const job = await jobById(b.id || ""); return { prompt: salaryPrompt(job, true), promptNoWeb: salaryPrompt(job, false) }; }
   if (kind === "feedback") {
@@ -5706,6 +5728,14 @@ async function updateGreeting() {
 const PLUS = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
 function buildResumeTop(root) {
   const grid = root.querySelector(".rsgrid"), top = grid && grid.querySelector(".rsfile");
+  const empty = !grid && root.querySelector(".empty-brief");
+  if (empty && !root.querySelector(".rsexamples")) {   // no resume yet: the examples help most now
+    const examples = document.createElement("section");
+    examples.className = "panel rspanel rsdocs rsexamples";
+    examples.style.marginTop = "16px";
+    empty.after(examples);
+    fillExamples(examples);
+  }
   if (!top || grid.dataset.top) return;
   grid.dataset.top = "1";
   // the chooser's radios stay as they are (app.js listens to them); the dropdown just ticks one
@@ -5754,7 +5784,7 @@ function buildResumeTop(root) {
 The shared page says "tracker"; here every piece of text is swapped as it's drawn ("Your tracker" to "Your job tracker
 file", "No spreadsheet yet." to "No job tracker file yet."). File names (Job_Search_Tracker...), typed text, prompts and
 code aren't touched, and neither is the app's own name in the header (.wordmark). */
-const TRK_RX = /(?<![Jj]ob )\b([Tt])racker( files?|s)?\b/g;
+const TRK_RX = /(?<![Jj]ob |[-\/.])\b([Tt])racker( files?|s)?\b(?!-)/g;   // not inside an address like job-tracker-webapp
 const relabel = s => s.replace(/No spreadsheet yet\./g, "No job tracker file yet.")
   .replace(TRK_RX, (m, t, more) => `${t === "T" ? "Job" : "job"} tracker ${more === "s" || more === " files" ? "files" : "file"}`);
 const NO_RELABEL = "textarea,input,script,style,code,pre,.wordmark";
@@ -6293,7 +6323,7 @@ function fillExamples(box) {
 
 /* The How to use guide as a side panel: groups that fold (remembered), a compact rail of initials, one section at a time
    with previous and next. app.js draws the guide; this rearranges it each time it's drawn. */
-const GUIDE_GROUPS = [["Get set up", ["start", "mode", "freechat", "local", "resume", "tracker"]], ["Find and apply", ["find", "apply", "interview"]], ["More", []]];
+const GUIDE_GROUPS = [["Get set up", ["video", "start", "mode", "freechat", "local", "resume", "tracker"]], ["Find and apply", ["find", "apply", "interview"]], ["More", []]];
 function buildGuidePanel(root) {
   const g = root.querySelector(".guide"), toc = g && g.querySelector(".gtoc"), body = g && g.querySelector(".gbody");
   if (!g || !toc || !body || g.dataset.panel) return;
@@ -6783,7 +6813,8 @@ function setupDraft(j,o){
         const p=await api("/api/prompt",{kind:o.key,id:j.id});
         const r=await askChat({title:"Ask your chat to write the "+(o.key==="resume"?"resume":"cover letter"),prompt:p.prompt,restore:p.restore,useLabel:"Create Word and PDF"});
         const i=r.text.indexOf(NOTES_MARK);
-        const body=(i>=0?r.text.slice(0,i):r.text).trim(),notes=i>=0?r.text.slice(i+NOTES_MARK.length).trim():"";
+        let body=(i>=0?r.text.slice(0,i):r.text).trim();const notes=i>=0?r.text.slice(i+NOTES_MARK.length).trim():"";
+        if(o.key==="resume")body=repairResume(body);
         out.value=body;out.classList.remove("hidden");note.textContent=notes;fileEl.innerHTML="";
         if(body){DRAFTS[cacheKey]={text:body,notes};showDone();setSaveLabel();await saveBoth(true)}
       }catch(e){if(e.name!=="AbortError")note.textContent=e.message||"That didn’t work. Try again."}
@@ -6975,7 +7006,7 @@ function renderResume(){
   if(!r.ok){el.innerHTML=head+`<div class="empty-brief"><h3>No resume yet</h3><p class="note" style="margin:0 0 16px;max-width:60ch">Upload the resume you send to employers. A Word file works best; a text-based PDF, .txt or .md file also works. Job tracker reads it to tailor resumes and cover letters, and to show how well you match each listing.</p>${up("Upload resume","primary")}</div>`;return}
   const meta=(S.resumes||[]).find(x=>x.file===r.file),secs=r.sections||[],skills=r.skills||[];
   const usual=[["Summary",/SUMMARY|PROFILE|OBJECTIVE|ABOUT/],["Skills",/SKILL|TECHNOLOG|COMPETENC/],["Experience",/EXPERIENCE|EMPLOYMENT|WORK HISTORY|CAREER/],["Education",/EDUCATION|TRAINING|CERTIF/]];
-  const absent=usual.filter(([,rx])=>!secs.some(s=>rx.test(s))).map(([n])=>n);
+  const absent=usual.filter(([,rx])=>!secs.some(s=>rx.test(s.toUpperCase()))).map(([n])=>n);
   const scored=jobList().filter(j=>matchPct(j)!=null),avg=scored.length?Math.round(scored.reduce((a,j)=>a+matchPct(j),0)/scored.length):null;
   const strong=scored.filter(j=>matchPct(j)>=70).length,gaps={};
   scored.forEach(j=>(j.skills.missing||[]).forEach(s=>gaps[s]=(gaps[s]||0)+1));
@@ -7279,6 +7310,21 @@ function webCapable(){const p=S.settings&&S.settings.ai&&S.settings.ai.provider;
 /* Copy and paste mode: no API. Job tracker builds the prompt, the user runs it in a free ChatGPT or Claude chat and pastes the reply back. */
 const isManual=()=>!!(S.settings&&S.settings.ai&&S.settings.ai.provider==="manual");
 const unfence=t=>String(t||"").trim().replace(/^```[a-z]*\s*\n/i,"").replace(/\n```\s*$/,"").trim();
+/* A reply as it comes off a chat website: no code fences, no label from a ChatGPT block ("Writing", "Plain text"), and no
+   markdown escapes, which would otherwise keep placeholders like \[NAME\] from being filled in. */
+const cleanReply=t=>unfence(String(t||"").trim().replace(/^(?:Writing|Document|Plain ?text|Text|Markdown|Copy code|Copy)\s*\n+/i,""))
+  .replace(/\\([\[\]{}()_*+#\-.!|~`>])/g,"$1");
+/* A resume copied from formatted chat text: put headings that ran into the next line back on their own line, and split
+   the name from contact details that joined it. */
+const RESUME_HEADS="PROFESSIONAL SUMMARY|SUMMARY|PROFILE|TECHNICAL SKILLS|CORE COMPETENCIES|SKILLS|PROFESSIONAL EXPERIENCE|WORK EXPERIENCE|RELEVANT EXPERIENCE|EMPLOYMENT HISTORY|EXPERIENCE|KEY PROJECTS|PROJECTS|EDUCATION AND TRAINING|EDUCATION|CERTIFICATIONS|CERTIFICATES|VOLUNTEER EXPERIENCE|AWARDS|LANGUAGES|TRAINING";
+function repairResume(t){
+  const lines=String(t||"").replace(new RegExp(`^(${RESUME_HEADS})[ \\t]+(?=\\S)`,"gm"),"$1\n").split("\n"),i=lines.findIndex(l=>l.trim());
+  if(i>=0){
+    const m=/^((?:[A-Z][\w.'’-]*\s+){0,3}[A-Z][\w.'’-]*)\s+(?=\S*@|\(?\+?\d[\d\s().-]{6,}|\S*linkedin)/.exec(lines[i]);
+    if(m)lines.splice(i,1,m[1].trim(),lines[i].slice(m[0].length));
+  }
+  return lines.join("\n");
+}
 /* Prompts for a chat website carry a version of your resume with your name and contact details replaced by placeholders.
    The server sends a map of placeholder to real value; it is applied here, to the reply, and never leaves this computer. */
 function restoreText(t,map){
@@ -7303,7 +7349,7 @@ function askChat(o){
     $("chatAlt").onchange=()=>{$("chatPrompt").value=cur()};
     $("chatPrompt").value=cur();$("chatReply").value="";$("chatErr").textContent="";$("chatCopied").textContent="";
     $("chatCopy").onclick=async()=>{try{await navigator.clipboard.writeText(cur());$("chatCopied").textContent="Copied. Paste it into your chat."}catch(e){$("chatPrompt").select();$("chatCopied").textContent="Press Ctrl+C to copy."}};
-    $("chatUse").onclick=()=>{const t=unfence($("chatReply").value);if(!t){$("chatErr").textContent="Paste the chat’s reply first.";return}finish(resolve,{text:restoreText(t,o.restore),web:useWeb()})};
+    $("chatUse").onclick=()=>{const t=cleanReply($("chatReply").value);if(!t){$("chatErr").textContent="Paste the chat’s reply first.";return}finish(resolve,{text:restoreText(t,o.restore),web:useWeb()})};
     $("chatCancel").onclick=()=>finish(reject,Object.assign(new Error("Cancelled."),{name:"AbortError"}));
     dlg.oncancel=e=>{e.preventDefault();$("chatCancel").click()};
     dlg.showModal();
@@ -7401,7 +7447,7 @@ async function renderGuide(){
       <nav class="gtoc" aria-label="Guide sections">${GUIDE.sections.map((s,i)=>`<a href="#g-${esc(s.id)}" data-g="${esc(s.id)}"><span>${i+1}</span>${esc(s.title)}</a>`).join("")}</nav>
       <div class="gbody">${GUIDE.sections.map((s,i)=>`<section class="gsec card" id="g-${esc(s.id)}">
         <h3><span class="gnum">${i+1}</span>${esc(s.title)}</h3>${s.intro?`<p class="gintro">${richText(s.intro)}</p>`:""}
-        <ol class="gsteps">${s.steps.map(st=>`<li><p>${richText(st.text)}</p>${st.img&&have.has(st.img)?`<figure><img src="guide/${esc(st.img)}" alt="${esc(st.caption||"")}" loading="lazy"><figcaption>${esc(st.caption||"")}</figcaption></figure>`:""}</li>`).join("")}</ol>
+        <ol class="gsteps">${s.steps.map(st=>`<li><p>${richText(st.text)}</p>${st.img&&have.has(st.img)?`<figure><img src="guide/${esc(st.img)}" alt="${esc(st.caption||"")}" loading="lazy"><figcaption>${esc(st.caption||"")}</figcaption></figure>`:""}${st.video?`<figure><video controls preload="none" playsinline src="guide/${esc(st.video)}"${st.poster?` poster="guide/${esc(st.poster)}"`:""} aria-label="${esc(st.caption||"")}"></video><figcaption>${esc(st.caption||"")}</figcaption></figure>`:""}</li>`).join("")}</ol>
       </section>`).join("")}</div>
     </div>`;
   el.querySelectorAll(".gtoc a").forEach(a=>a.onclick=e=>{e.preventDefault();const t=$("g-"+a.dataset.g);if(t)t.scrollIntoView({behavior:"smooth",block:"start"})});
@@ -7912,7 +7958,7 @@ function setupKit(j){
     try{
       const text=await runWriting({kind:"kit",id:j.id,title:"Ask your chat for the application kit",signal:ctl.signal,useLabel:"Create Word and PDF files"});
       const k=(await api("/api/import",{kind:"kit",text})).kit;
-      DRAFTS[j.id+":resume"]={text:k.resume,notes:k.notes};DRAFTS[j.id+":letter"]={text:k.letter,notes:""};DRAFTS[j.id+":answers"]={text:k.answers};
+      DRAFTS[j.id+":resume"]={text:repairResume(k.resume),notes:k.notes};DRAFTS[j.id+":letter"]={text:k.letter,notes:""};DRAFTS[j.id+":answers"]={text:k.answers};
       if(S.sel===j.id)renderDetail();
       await saveKit(true);                          // the resume and letter as Word and PDF, plus the answers, straight into the job's folder
     }catch(e){if(e.name!=="AbortError")note.textContent=e.message||"That didn’t finish. Try again."}
