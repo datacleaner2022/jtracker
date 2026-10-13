@@ -1370,8 +1370,8 @@ html[data-scale] dialog:has(#setForm){width:min(940px,calc(96vw / var(--z)));hei
 #setForm .seg label:has(input[name=prov][value=openai]),
 .spane[data-pane=general] > p.note:last-child{display:none}
 
-/* Find jobs: GPT/Claude prompts is the one way to search here, so no Automatic or AI search, and no switch between them */
-.enginebar .seg2,#autoSec{display:none}
+/* Find jobs: no Automatic finder here. AI search works with a local model that has an LM Studio web search plugin. */
+.enginebar .seg2 button[data-engine=auto],#autoSec{display:none}
 
 /* Checking whether a posting link still works needs a server */
 .linkrow{display:none}
@@ -2112,6 +2112,8 @@ button,.btn,.views button,.inuse-item,.slbar-toggle{-webkit-user-select:none;use
         <label>Server address<input type="text" id="lBase"></label>
         <label>Model<input type="text" id="lModel"></label>
         <label>API key (usually blank)<input type="password" id="lKey" autocomplete="off"></label>
+        <label>Web search plugin (LM Studio, optional)<input type="text" id="lWeb" placeholder="e.g. exa"></label>
+        <p class="note">With a web search plugin set up in LM Studio’s mcp.json, Find jobs can search the web with your local model. README.md next to this page has the steps.</p>
         <p class="note">Ollama: http://localhost:11434/v1 and a model you’ve pulled, e.g. llama3.1:8b. LM Studio: http://localhost:1234/v1 with the server started.</p>
       </div>
       <div class="row2"><button class="btn small" type="button" id="testAi">Test connection</button><span class="note" id="testOut"></span></div>
@@ -2347,7 +2349,7 @@ function serial(fn) { const run = _chain.then(fn, fn); _chain = run.catch(() => 
 const DEFAULT_SETTINGS = {
   home_city: "Kitchener, ON", follow_up_days: 10, tracker_file: "", resume_file: "", about_me_extra: "",
   blocklist: [], job_resume: {},
-  ai: { provider: "manual", local: { base_url: "http://localhost:11434/v1", model: "llama3.1:8b", api_key: "" } }
+  ai: { provider: "manual", local: { base_url: "http://localhost:11434/v1", model: "llama3.1:8b", api_key: "", web_plugin: "" } }
 };
 function merge(base, over) {
   const out = Object.assign({}, base);
@@ -4291,8 +4293,8 @@ const STATIC_GUIDE = [
     steps: [
       { text: "Open **Settings** (the last tab, on the right). On the **General** tab, find **Drafting with** and pick a mode. The badge at the top right always shows the mode in use; click it to come back here.", img: "st-02-settings-free-chat.jpg", caption: "Settings, General: Drafting with, here set to Free chat." },
       { text: "**Free chat (copy and paste)** uses a free ChatGPT or Claude account in another tab. No key, no cost, and it can search the web for jobs. The next section shows how it works." },
-      { text: "**Local model** uses an AI running on your own computer (Ollama or LM Studio) through its API. Job tracker talks to it directly, so drafts appear without copying anything, and nothing leaves your computer. It can't search the web. See **Local model** below to set it up." },
-      { text: "Not sure? Start with **Free chat**. Finding jobs always uses the chat prompts on this page, whichever mode you pick for drafting." },
+      { text: "**Local model** uses an AI running on your own computer (Ollama or LM Studio) through its API. Job tracker talks to it directly, so drafts appear without copying anything, and nothing leaves your computer. On its own it can't search the web, but in LM Studio a web search plugin lets it search for **Find jobs**. See **Local model** below to set it up." },
+      { text: "Not sure? Start with **Free chat**. Finding jobs uses the chat prompts on this page, unless your local model has a web search plugin." },
       { text: "Paid API keys for Claude or ChatGPT are only in the desktop version of Job tracker." },
     ] },
   { id: "freechat", title: "Free chat: copy and paste",
@@ -4312,7 +4314,8 @@ const STATIC_GUIDE = [
       { text: "Let this page talk to it. **Ollama**: set the environment variable **OLLAMA_ORIGINS** to an asterisk (the * character) and restart Ollama. **LM Studio**: start the server in the Developer tab and switch on **Enable CORS**. Without this the browser blocks the connection. README.md next to this page has the details." },
       { text: "In **Settings**, **General**, choose **Local model**. Fill in **Server address** (Ollama: http://localhost:11434/v1, LM Studio: http://localhost:1234/v1) and **Model** (the name you downloaded, for example llama3.1:8b). Leave **API key** blank unless your server asks for one.", img: "st-03-settings-local.jpg", caption: "Local model: the server address and model of Ollama or LM Studio." },
       { text: "Click **Test connection**. When it says it worked, click **Save settings**. The badge at the top right now says **Local model**." },
-      { text: "Now **Craft resume**, **Draft cover letter**, research and interview prep write straight into Job tracker. A local model can't search the web, so for **Find jobs** keep using the chat prompts, and company research comes from what the model already knows." },
+      { text: "Now **Craft resume**, **Draft cover letter**, research and interview prep write straight into Job tracker. Company research comes from what the model already knows." },
+      { text: "To let it search for jobs, add a web search plugin in LM Studio (README.md next to this page has the steps) and fill in **Web search plugin** in Settings, for example exa. Then pick **AI search** in **Find jobs**. Job tracker removes any link the model didn't find in its searches." },
       { text: "If a draft stops or is slow, try a smaller model, or switch back to **Free chat** for that task." },
     ] },
   { id: "resume", title: "Add your resume",
@@ -4922,6 +4925,78 @@ async function apiResumeSelect(req) {
   return { ok: true, resume: await resumeInfo() };
 }
 
+/* The Find jobs prompt and its restore map. forChat hides personal details from a chat website. */
+async function searchPromptFor(criteria, forChat) {
+  const s = await settings(), [text, restore] = await promptResume(null, forChat), [cats, tracked] = await catsAndTracked();
+  // where to search: the Near field when it's filled, else the city on the resume, else the home city setting; the
+  // same place is where the candidate is "based" and what distances are measured from. Empty roles: what fits the resume.
+  // (Only the values change; the prompt's words stay the same as ai.search_prompt.)
+  const c = Object.assign({}, criteria || {}), near = String(c.location || "").trim(), where = near || (await resumeCity()) || s.home_city;
+  c.location = where;
+  if (!String(c.roles || "").trim()) c.roles = "roles that fit the candidate's resume";
+  return [searchPrompt(c, text, where, cats, tracked, s.blocklist || []), restore];
+}
+
+/* ---------- Find jobs with the local model and an LM Studio web search plugin ----------
+LM Studio 0.4+ runs MCP plugins (from its mcp.json) for /api/v1/chat requests, so the searching happens on the model's
+computer. The reply's tool_call items carry what the plugin returned, which is how a link is checked against what was
+really found. */
+const LOCAL_SEARCH_RULES = `
+
+HOW TO SEARCH
+- You have a web search tool. Use it: search several times with different queries (the role with the city, with "jobs", with board names such as Indeed or LinkedIn, with company names), and open promising pages to read the posting.
+- Only list postings you saw in the tool results, and copy each "source" link exactly as the tool showed it.
+- Today's date is ${new Date().toISOString().slice(0, 10)}.`;
+const urlKey = u => String(u || "").toLowerCase().replace(/^https?:\/\/(www\.)?/, "").replace(/[#?].*$/, "").replace(/\/+$/, "");
+async function localWebChat(s, prompt, signal) {
+  const cfg = s.ai.local, base = String(cfg.base_url).replace(/\/+$/, "").replace(/\/v1$/, "");
+  const headers = { "content-type": "application/json" };
+  if (cfg.api_key) headers.authorization = "Bearer " + cfg.api_key;
+  let res;
+  try {
+    res = await _fetch(base + "/api/v1/chat", { method: "POST", headers, signal,
+      body: JSON.stringify({ model: cfg.model, input: prompt, integrations: [cfg.web_plugin] }) });
+  } catch (e) {
+    if (e && e.name === "AbortError") throw e;
+    throw new AIError(`Can't reach your local model at ${base}. Is LM Studio running? And ${CORS_HINT}`);
+  }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = String((body.error && (body.error.message || body.error)) || "");
+    if (/permission denied to use plugin/i.test(msg))
+      throw new AIError(`LM Studio wouldn't run the plugin “${cfg.web_plugin}”. In LM Studio's server settings, switch on “Allow calling servers from mcp.json”, and check the plugin name matches mcp.json.`);
+    if (res.status === 404) throw new AIError("Web search needs LM Studio 0.4 or newer, and Ollama doesn't have it. Update LM Studio, or use GPT/Claude prompts.");
+    if (res.status === 401 || res.status === 403) throw new AIError("LM Studio turned the API key away. Check it in Settings.");
+    throw new AIError(`local model error ${res.status}: ${msg.slice(0, 300)}`);
+  }
+  const items = body.output || [], calls = items.filter(i => i.type === "tool_call");
+  return {
+    text: items.filter(i => i.type === "message").map(i => i.content).join("\n").trim(),
+    found: calls.map(i => typeof i.output === "string" ? i.output : JSON.stringify(i.output || "")).join("\n"),
+    calls: calls.length
+  };
+}
+async function apiSearchLocal(req) {
+  const s = await settings();
+  if (s.ai.provider !== "local" || !s.ai.local.web_plugin) throw new ApiError("Choose Local model in Settings and fill in Web search plugin first.", 428);
+  const [prompt] = await searchPromptFor(req.body.criteria, false);
+  const r = await localWebChat(s, prompt + LOCAL_SEARCH_RULES, req.signal);
+  if (!r.calls) throw new ApiError("Your model answered without searching the web, so its results can't be trusted. Try again, or pick a model that's better at using tools.", 422);
+  let rows;
+  try { rows = rowsFromText(r.text, searchCount(req.body.criteria)); } catch (e) { if (e instanceof AIError) throw new ApiError(e.message, 422); throw e; }
+  // a link the plugin never returned was made up: drop it rather than send someone to a wrong page
+  const found = urlKey(r.found.replace(/\\\//g, "/"));
+  let unchecked = 0;
+  for (const row of rows) {
+    if (row.source && !found.includes(urlKey(row.source))) {
+      row.source = ""; unchecked++;
+      row.notes = (row.notes ? row.notes.replace(/[; .]+$/, "") + "; " : "") + "Link not in the search results: look this one up by name";
+    }
+  }
+  const [keep, hidden] = await filterBlocked(rows);
+  return { rows: await enrichRows(keep), hidden, unchecked, searches: r.calls };
+}
+
 /* ---------- copy and paste mode ---------- */
 async function apiPrompt(req) {
   const b = req.body, kind = b.kind, s = await settings(), home = s.home_city, extra = s.about_me_extra;
@@ -4941,16 +5016,7 @@ async function apiPrompt(req) {
     const [job, q, a] = await feedbackArgs(b), [text, restore] = await promptResume(b.id, false);
     return out({ prompt: feedbackPrompt(job, q, a, text) }, restore);
   }
-  if (kind === "search") {
-    const [text, restore] = await promptResume(null, !!b.chat), [cats, tracked] = await catsAndTracked();
-    // where to search: the Near field when it's filled, else the city on the resume, else the home city setting; the
-    // same place is where the candidate is "based" and what distances are measured from. Empty roles: what fits the resume.
-    // (Only the values change; the prompt's words stay the same as ai.search_prompt.)
-    const c = Object.assign({}, b.criteria || {}), near = String(c.location || "").trim(), where = near || (await resumeCity()) || home;
-    c.location = where;
-    if (!String(c.roles || "").trim()) c.roles = "roles that fit the candidate's resume";
-    return out({ prompt: searchPrompt(c, text, where, cats, tracked, s.blocklist || []) }, restore);
-  }
+  if (kind === "search") { const [prompt, restore] = await searchPromptFor(b.criteria, !!b.chat); return out({ prompt }, restore); }
   if (kind === "parse") {
     const text = String(b.text || "").trim();
     if (text.length < 80) throw new ApiError("Paste the full posting text (at least a few sentences).");
@@ -5004,13 +5070,18 @@ async function apiSettings(req) {
   if ("follow_up_days" in b) { const n = parseInt(b.follow_up_days, 10); if (Number.isFinite(n)) s.follow_up_days = Math.max(1, Math.min(60, n)); }
   const a = b.ai || {};
   if (["local", "manual"].includes(a.provider)) s.ai.provider = a.provider;
-  for (const field of ["model", "base_url", "api_key"]) {
+  for (const field of ["model", "base_url", "api_key", "web_plugin"]) {
     let v = (a.local || {})[field];
     if (v == null) continue;
     v = String(v).trim();
     if (field === "api_key" && v === "") continue;               // blank keeps the saved key
     if (field === "api_key" && v === "-") v = "";                // a dash clears it
     if (field === "base_url" && v) { v = cleanBaseUrl(v); if (!v) throw new ApiError("The server address must start with http:// or https://"); }
+    if (field === "web_plugin" && v) {                           // the server's name in LM Studio's mcp.json, as mcp/name
+      v = v.replace(/^mcp\//i, "");
+      if (!/^[\w.-]+$/.test(v)) throw new ApiError("The web search plugin is the server's name from LM Studio's mcp.json, for example exa.");
+      v = "mcp/" + v;
+    }
     s.ai.local[field] = v;
   }
   await saveSettings(s);
@@ -5038,7 +5109,7 @@ const ROUTES = {
   "/api/find/config": async req => req.method === "POST" ? notHere("The automatic finder")() : Object.assign(publicFind(), { trackerExists: await trackerExists() }),
   "/api/find/company": notHere("The automatic finder"), "/api/find/run": notHere("The automatic finder"),
   "/api/tracker/create": apiTrackerCreate, "/api/tracker/import": apiTrackerImport, "/api/prompts": apiPrompts,
-  "/api/search/state": apiSearchState, "/api/search": notHere("Searching the web with an API key"), "/api/search/parse": apiSearchParse,
+  "/api/search/state": apiSearchState, "/api/search": notHere("Searching the web with an API key"), "/api/search/local": apiSearchLocal, "/api/search/parse": apiSearchParse,
   "/api/tracker/add": apiTrackerAdd, "/api/search/export": apiSearchExport, "/api/search/tracker-file": apiSearchTrackerFile,
   "/api/guide": apiGuide, "/api/guide.pdf": async () => { printGuide(); return { ok: true }; },
   "/api/resume/upload": apiResumeUpload, "/api/resume/select": apiResumeSelect, "/api/prompt": apiPrompt, "/api/import": apiImport,
@@ -5323,7 +5394,7 @@ async function eraseAll() {
 
 /* ---------- start: add this edition's pieces to the shared page ---------- */
 function setupPage() {
-  try { localStorage.setItem("jobline-find-engine", "chat"); } catch (e) {}   // Find jobs: GPT/Claude prompts is the one way to search here
+  try { if (localStorage.getItem("jobline-find-engine") !== "api") localStorage.setItem("jobline-find-engine", "chat"); } catch (e) {}   // Find jobs: no Automatic finder here (AI search falls back to prompts by itself when there's no plugin)
   document.body.insertAdjacentHTML("beforeend", `<dialog id="slDlg" aria-labelledby="slDlgTitle"><h2 id="slDlgTitle"></h2><div class="sldbody"></div>
     <div class="row2 end" style="margin-top:16px"><button class="btn" type="button" id="slDlgClose">Close</button></div></dialog>
     <input type="file" id="slTrkFile" class="hidden" accept=".xlsx"><input type="file" id="slRestoreFile" class="hidden" accept=".json,application/json">`);
@@ -6548,7 +6619,7 @@ function openSettings(tab){
   const ph=(cfg,dflt)=>cfg.has_key?`Saved (${cfg.key_hint}). Leave blank to keep.`:dflt;
   $("aKey").value="";$("aKey").placeholder=ph(a.anthropic,"sk-ant-…");$("aModel").value=a.anthropic.model||"";
   $("oKey").value="";$("oKey").placeholder=ph(a.openai,"sk-…");$("oModel").value=a.openai.model||"";$("oBase").value=a.openai.base_url||"";
-  $("lKey").value="";$("lBase").value=a.local.base_url||"";$("lModel").value=a.local.model||"";
+  $("lKey").value="";$("lBase").value=a.local.base_url||"";$("lModel").value=a.local.model||"";$("lWeb").value=String(a.local.web_plugin||"").replace(/^mcp\//,"");
   showResume();$("resOut").textContent="";$("blockTxt").value=(s.blocklist||[]).join("\n");
   $("extraTxt").value=s.about_me_extra||"";$("fuDays").value=s.follow_up_days||10;$("testOut").textContent="";
   showProv();renderAppearance();loadBrowsers();showSettingsTab(typeof tab==="string"?tab:"general");$("settingsDlg").showModal();
@@ -6626,7 +6697,7 @@ function settingsBody(){
   return {ai:{provider:(document.querySelector('input[name=prov]:checked')||{}).value,
     anthropic:{api_key:$("aKey").value,model:$("aModel").value},
     openai:{api_key:$("oKey").value,model:$("oModel").value,base_url:$("oBase").value},
-    local:{api_key:$("lKey").value,model:$("lModel").value,base_url:$("lBase").value}},
+    local:{api_key:$("lKey").value,model:$("lModel").value,base_url:$("lBase").value,web_plugin:$("lWeb").value}},
     about_me_extra:$("extraTxt").value,blocklist:$("blockTxt").value.split(/\r?\n/),follow_up_days:$("fuDays").value,
     browser:$("brSel").value||"default",open_browser:$("brAuto").checked};
 }
@@ -7134,7 +7205,7 @@ function renderSearch(){
   if($("sRun")){
     $("sRun").onclick=async()=>{
       saveCrit();const sid=st.activeSaved;st.activeSaved=null;searchCtl=new AbortController();
-      $("sRun").disabled=true;$("sStop").classList.remove("hidden");$("sMeta").textContent=findEngine()==="chat"?"Waiting for your chat’s reply…":"Searching job boards. This usually takes 1 to 3 minutes.";
+      $("sRun").disabled=true;$("sStop").classList.remove("hidden");$("sMeta").textContent=findEngine()==="chat"?"Waiting for your chat’s reply…":!apiProvider()&&localWeb()?"Your local model is searching the web. This can take several minutes.":"Searching job boards. This usually takes 1 to 3 minutes.";
       $("results").innerHTML=`<div class="thinking"><i></i>Searching and comparing postings with your resume…</div>`+[1,2,3].map(()=>`<div class="skel" style="margin-top:12px"><b></b><b></b><b style="width:85%"></b></div>`).join("");
       if(typeof S.drafting==="number")S.drafting++;
       try{
@@ -7242,8 +7313,11 @@ const SEARCH={state:null,
       }
       return rows;
     }
-    const res=await fetch("/api/search",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({criteria:c,provider:apiProvider()}),signal});
-    const d=await res.json().catch(()=>({}));if(!res.ok)throw new Error(d.error||"The search didn’t finish. Try again.");SEARCH.hidden=d.hidden||0;return d.rows||[];
+    const lw=!apiProvider()&&localWeb();
+    const res=await fetch(lw?"/api/search/local":"/api/search",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({criteria:c,provider:apiProvider()}),signal});
+    const d=await res.json().catch(()=>({}));if(!res.ok)throw new Error(d.error||"The search didn’t finish. Try again.");SEARCH.hidden=d.hidden||0;
+    if(d.unchecked)SEARCH.note=` ${d.unchecked} ${d.unchecked===1?"link wasn’t":"links weren’t"} in the search results, so ${d.unchecked===1?"it was":"they were"} left out.`;
+    return d.rows||[];
   },
   async parse(text,url){
     if(isManual()){
@@ -7793,32 +7867,34 @@ const AUTO_INTRO="Finds new roles from the company career pages and Adzuna sourc
 function findEngine(){
   let e="";try{e=localStorage.getItem("jobline-find-engine")||""}catch(x){}
   if(e==="ai")e=isManual()?"chat":"api";                 // the setting from before there were three choices
-  if(e==="api"&&!apiProvider())e="chat";                 // the key has gone: prompts still work
+  if(e==="api"&&!apiProvider()&&!localWeb())e="chat";    // the key or plugin has gone: prompts still work
   if(e==="auto"||e==="api"||e==="chat")return e;
   if(S.find&&(S.find.watchlist.length||S.find.has_key))return "auto";
-  return apiProvider()?"api":"chat";
+  return apiProvider()||localWeb()?"api":"chat";
 }
+/* A local model in LM Studio with a web search plugin: AI search runs on it when there's no API key. */
+function localWeb(){const ai=(S.settings&&S.settings.ai)||{};return ai.provider==="local"&&!!(ai.local&&ai.local.web_plugin)}
 /* The API provider for AI search: the one in Settings if it can search the web, else any other with a key. */
 function apiProvider(){
   const ai=(S.settings&&S.settings.ai)||{},ok=p=>ai[p]&&ai[p].has_key&&ai[p].model;
   return [ai.provider,"anthropic","openai"].find(p=>(p==="anthropic"||p==="openai")&&ok(p))||"";
 }
 function engineToggle(engine){
-  const nm={anthropic:"Anthropic",openai:"OpenAI"}[apiProvider()];
+  const nm={anthropic:"Anthropic",openai:"OpenAI"}[apiProvider()],lw=!nm&&localWeb();
   const note={auto:"Reads the career pages and job service you set up. Fast, and it costs nothing.",
     chat:"Job tracker writes a search prompt for ChatGPT or Claude. Paste it into a chat with web search on, then paste the reply back here.",
-    api:`Searches the web with your ${nm} API key. It takes 1 to 3 minutes and uses your API credits.`}[engine];
-  const own=(engine==="chat"&&!isManual())||(engine==="api"&&!(webCapable()&&S.settings.ai.provider===apiProvider()));
+    api:lw?"Your local model searches the web with its LM Studio plugin. It can take several minutes, and links it didn’t find in its searches are left out.":`Searches the web with your ${nm} API key. It takes 1 to 3 minutes and uses your API credits.`}[engine];
+  const own=(engine==="chat"&&!isManual())||(engine==="api"&&!lw&&!(webCapable()&&S.settings.ai.provider===apiProvider()));
   return `<div class="enginebar"><div class="seg2 seg3" role="group" aria-label="How to search">
     <button type="button" data-engine="auto" aria-current="${engine==="auto"}">Automatic<small>No AI, free</small></button>
-    <button type="button" data-engine="api" aria-current="${engine==="api"}">AI search<small>${nm?"Your "+nm+" API key":"Needs an API key"}</small></button>
+    <button type="button" data-engine="api" aria-current="${engine==="api"}">AI search<small>${nm?"Your "+nm+" API key":lw?"Your local model":"Needs a web search plugin"}</small></button>
     <button type="button" data-engine="chat" aria-current="${engine==="chat"}">GPT/Claude prompts<small>Copy a prompt, paste the reply</small></button></div>
     <p class="note" style="margin:8px 0 0">${esc(note)}${own?" This is just for Find jobs: drafting and research keep the AI mode from Settings.":""}</p></div>`;
 }
 function bindEngine(){
   document.querySelectorAll("[data-engine]").forEach(b=>b.onclick=()=>{
     const e=b.dataset.engine;
-    if(e==="api"&&!apiProvider()){toast("Add an Anthropic or OpenAI API key in Settings to search the web with AI.");openSettings();return}
+    if(e==="api"&&!apiProvider()&&!localWeb()){toast("To search the web with AI, choose Local model in Settings and add a web search plugin (README.md has the steps).");openSettings();return}
     try{localStorage.setItem("jobline-find-engine",e)}catch(x){}
     renderSearch();
   });

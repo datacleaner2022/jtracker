@@ -13,7 +13,8 @@ Chrome and Edge work best; Firefox and Safari work too. The How to use guide (th
   with its formats, dropdowns and formulas. In other browsers, a bar reminds you to download the
   updated tracker after making changes.
 - Two ways to draft: free chat (copy and paste into ChatGPT or Claude) or a local model.
-  API keys, AI web search, the automatic job finder and the link check need the desktop app.
+  A local model in LM Studio can also search the web for Find jobs (see below). API keys, the automatic
+  job finder and the link check need the desktop app.
 - Cover letters and resumes are made as Word files and PDFs and kept with each job. Download them,
   or use **Open folder** on a job to see everything kept for it.
 - In Chrome and Edge you can also save your files to a folder on your computer: on the **Resume** tab,
@@ -41,6 +42,39 @@ A web page may only talk to a local model that allows it.
 
 1. In the Developer tab (the server), start the server and switch on **Enable CORS**.
 2. In Job tracker: server address `http://localhost:1234/v1` and the model name, then **Test connection**.
+   If LM Studio runs on another computer, use that computer's address, for example `http://192.168.2.132:1234/v1`.
+
+### Web search for Find jobs (LM Studio 0.4 or newer)
+
+A local model can't go online by itself. LM Studio can give it a web search plugin (an MCP server) that runs
+on the computer where LM Studio is. Then **Find jobs**, **AI search** sends your search to the model, the
+model searches the web, and the results come back in your tracker's columns.
+
+Everything is done in LM Studio's own window, on the computer that runs it:
+
+1. In a chat, open the **Program** tab on the right, then **Install**, **Edit mcp.json**, and add a web
+   search server. Exa's hosted one needs nothing installed and no key (free, with a usage limit):
+
+   ```json
+   {
+     "mcpServers": {
+       "exa": {
+         "url": "https://mcp.exa.ai/mcp"
+       }
+     }
+   }
+   ```
+
+   If mcp.json already lists other servers, add the `"exa"` entry next to them.
+2. In the Developer tab's **Server Settings**, switch on **Allow calling servers from mcp.json**.
+3. Use a model that is good with tools (Qwen 3 or newer, gpt-oss, GLM 4.7 and the like).
+
+The searches the model writes go to Exa; your resume stays with your model.
+
+In Job tracker: **Settings**, **Local model**, **Web search plugin**: `exa` (the name from mcp.json).
+Then in **Find jobs**, pick **AI search**. A search can take several minutes. Job tracker refuses results
+when the model didn't search at all, and it removes any link that wasn't in the search results, so you
+aren't sent to a page the model made up. Still check each posting before you apply.
 
 ### Opening the page from a local web address
 
