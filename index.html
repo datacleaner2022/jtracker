@@ -167,6 +167,16 @@ h1::before{content:"";width:22px;height:22px;border:1.5px solid var(--amber);bor
 .track textarea{min-height:70px;resize:vertical}
 .saved{font-size:12.5px;color:var(--green);min-height:18px;margin-top:6px}
 .savedfile{margin-top:8px;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ats{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2)}
+.ats .atshead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:8px}
+.ats .atshead span{color:var(--muted);font-size:13px}
+.ats .atslist{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}
+.ats .atslist li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45}
+.ats .atslist li span{color:var(--muted)}
+.ats .atsmark{flex:none;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;font-weight:700;margin-top:1px}
+.ats li.ok .atsmark{background:var(--green-soft);color:var(--green)}
+.ats li.warn .atsmark{background:var(--red-soft);color:var(--red)}
+.ats .note{margin:0;font-size:12.5px}
 .letter textarea{min-height:280px;line-height:1.6;resize:vertical}
 .profile textarea{min-height:100px;resize:vertical}
 details summary{cursor:pointer;color:var(--muted);font-size:13.5px}
@@ -2552,14 +2562,111 @@ const SKILLS = [
   ["Traceability", "traceab"], ["Quality systems", "\\biso ?9001|\\bgmp\\b|quality system"]
 ].map(([n, rx]) => [n, new RegExp(rx, "i")]);
 const skillsIn = text => { const t = String(text || ""); return SKILLS.filter(([, rx]) => rx.test(t)).map(([n]) => n); };
+// a general skill is left out when the posting names a specific one (SQL when it asks for SQL Server)
+const GENERAL_SKILLS = { SQL: ["SQL Server", "PostgreSQL", "MySQL"], ".NET": ["ASP.NET"], Java: ["Spring"] };
+const dropGeneral = asked => asked.filter(s => !(GENERAL_SKILLS[s] || []).some(sp => asked.includes(sp)));
 function matchSkills(job, resumeText) {
-  let asked = skillsIn(["requirements", "role", "category"].map(k => String(job[k] || "")).join(" "));
-  const general = { SQL: ["SQL Server", "PostgreSQL", "MySQL"], ".NET": ["ASP.NET"], Java: ["Spring"] };
-  asked = asked.filter(s => !(general[s] || []).some(sp => asked.includes(sp)));
+  const asked = dropGeneral(skillsIn(["requirements", "role", "category"].map(k => String(job[k] || "")).join(" ")));
   if (!asked.length) return { score: null, matched: [], missing: [], total: 0 };
   const have = new Set(skillsIn(resumeText));
   const matched = asked.filter(s => have.has(s)), missing = asked.filter(s => !have.has(s));
   return { score: Math.round(100 * matched.length / asked.length), matched, missing, total: asked.length };
+}
+
+/* ---------- ATS: what applicant tracking systems need from a resume, and a check of a tailored one ----------
+An ATS turns the file into text, splits it into sections by their headings, pulls out contact details, jobs and dates,
+and ranks the resume by how many of the posting's keywords it finds, often as exact words. */
+function atsRules(job) {
+  return `ATS rules (an applicant tracking system reads this resume before a person does):
+- One plain column of text: no tables, columns, text boxes, emojis, icons or special symbols. Bullets start with "- ".
+- Standard section headings only, in this order where they apply: SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION, CERTIFICATIONS. No creative headings.
+- Line 2 has the contact details as plain text: email, phone, city and province, and LinkedIn if the resume has them.
+- Begin the SUMMARY with a short headline that uses the posting's job title, "${job.role}", if the candidate's experience fits it. Never change a past job title.
+- Use the posting's exact words for skills, tools and qualifications the candidate really has (if the posting says "SQL Server" and the resume says "MSSQL", write "SQL Server"). Write an acronym out in full once, e.g. "Continuous Integration and Delivery (CI/CD)".
+- SKILLS: a few labelled lines of comma-separated keywords, e.g. "Languages: C#, Python, SQL", with what the posting asks for first.
+- Put the posting's key requirements in the experience bullets too, not only in SKILLS, wherever they are true.
+- Write dates the same way everywhere, "Mon YYYY - Mon YYYY" or "Mon YYYY - Present", without changing them. If the resume gives only years, keep years.`;
+}
+const ATS_HEADINGS = new Set(["summary", "professional summary", "profile", "career summary", "qualifications", "summary of qualifications",
+  "skills", "technical skills", "core skills", "key skills", "core competencies", "areas of expertise",
+  "experience", "work experience", "professional experience", "employment", "employment history", "relevant experience", "work history",
+  "projects", "key projects", "education", "education and training", "education & training", "certifications", "certificates", "licenses and certifications",
+  "training", "professional development", "volunteer experience", "volunteering", "awards", "publications", "languages", "interests", "references"]);
+const KW_LEAD = /^(?:(?:strong|solid|proven|hands-on|demonstrated|excellent|good|working|deep|some|basic|prior)\s+)?(?:experience|knowledge|understanding|proficiency|familiarity|expertise|skills?|background|exposure)\s+(?:with|in|of|using)\s+/i;
+const KW_STOP = new Set(["experience", "skills", "knowledge", "ability", "years", "year", "plus", "asset", "required", "preferred", "etc", "strong", "excellent", "good", "team", "work", "working"]);
+const kwNorm = s => " " + String(s).toLowerCase().replace(/[^a-z0-9+#.]+/g, " ").replace(/\.(?=\s|$)|(^|\s)\.(?!net)/g, " ").replace(/\s+/g, " ").trim() + " ";
+/* The keywords an ATS would look for: the known skills the posting asks for, then the short phrases in "What they ask for". */
+function postingKeywords(job) {
+  const asked = [job.requirements, job.role, job.category].map(x => String(x || "")).join(" ");
+  const names = dropGeneral(skillsIn(asked)), out = SKILLS.filter(([n]) => names.includes(n)).map(([n, rx]) => ({ k: n, rx }));
+  const seen = new Set(out.map(o => kwNorm(o.k)));
+  for (let p of String(job.requirements || "").split(/[,;\n•·]|\s(?:and|or|plus)\s|\.\s/i)) {
+    p = p.replace(/\(.*?\)/g, " ").replace(/^[\s\-–*]+|[\s.:]+$/g, "")
+      .replace(/^\d+\s*\+?\s*(?:years?|yrs?)\s*(?:of\s+)?(?:experience\s+)?(?:with|in|of|using)?\s*/i, "").replace(KW_LEAD, "").trim();
+    const words = p.split(/\s+/).filter(Boolean);
+    if (!p || p.length < 2 || p.length > 40 || words.length > 4 || words.every(w => KW_STOP.has(w.toLowerCase()))) continue;
+    if (out.some(o => o.rx && o.rx.test(p))) continue;                 // a known skill already covers it
+    const n = kwNorm(p);
+    if (n.trim() && !seen.has(n)) { seen.add(n); out.push({ k: p }); }
+  }
+  return out;
+}
+function hasKeyword(kw, text, norm) {
+  if (kw.rx) return kw.rx.test(text);
+  const n = kwNorm(kw.k);
+  if (norm.includes(n)) return true;
+  const words = n.trim().split(" ").filter(w => w.length > 2 && !KW_STOP.has(w));     // every word of the phrase, in any order
+  return words.length > 1 && words.every(w => norm.includes(" " + w + " "));
+}
+const DATE_FORMS = [["Mon YYYY", /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\.? (?:19|20)\d{2}\b/gi],
+  ["Month YYYY", /\b(?:january|february|march|april|june|july|august|september|october|november|december) (?:19|20)\d{2}\b/gi],
+  ["MM/YYYY", /\b(?:0?[1-9]|1[0-2])\/(?:19|20)\d{2}\b/g], ["YYYY-MM", /\b(?:19|20)\d{2}-(?:0[1-9]|1[0-2])\b/g]];
+/* The checks an ATS-ready resume passes, for the tailored text and the job; original is the resume it came from. */
+function atsCheck(text, job, original = "") {
+  text = String(text || "");
+  const checks = [], add = (ok, label, detail) => checks.push({ ok: !!ok, label, detail: detail || "" });
+  const blocks = resumeBlocks(text), heads = blocks.filter(b => b.t === "h").map(b => b.s.toLowerCase().replace(/\s+/g, " ").trim());
+  const has = names => heads.some(h => names.includes(h) || names.some(n => h.endsWith(" " + n)));
+  const contact = (blocks.find(b => b.t === "contact") || {}).s || text.split("\n").slice(0, 6).join(" ");
+  const email = /[\w.+-]+@[\w-]+\.[\w.]+/.test(contact), phone = /(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(contact);
+  add(email && phone, "Contact details", email && phone ? "Email and phone are on line 2, where an ATS looks for them."
+    : `Line 2 is missing your ${!email && !phone ? "email and phone. Put them" : !email ? "email. Put it" : "phone. Put it"} there as plain text.`);
+  const need = [["Experience", ["experience", "employment", "employment history", "work history"]],
+    ["Education", ["education", "education and training", "education & training"]], ["Skills", ["skills", "core competencies", "areas of expertise"]]];
+  const missing = need.filter(([, n]) => !has(n)).map(([l]) => l);
+  add(!missing.length, "Standard sections", missing.length ? `No ${missing.join(", ")} heading. An ATS files your details under these names.` : "Experience, Education and Skills each have a heading.");
+  const odd = heads.filter(h => !ATS_HEADINGS.has(h));
+  add(!odd.length, "Headings an ATS knows", odd.length ? `Rename ${odd.map(h => `“${titleCase(h)}”`).join(", ")} to a standard heading such as Experience, Projects or Certifications.` : "Every heading is a standard one.");
+  const jobs = blocks.filter(b => b.t === "job").length;
+  add(jobs > 0, "Jobs it can read", jobs ? `${jobs} ${jobs === 1 ? "entry" : "entries"} as “Title, Employer | Location | Dates”.` : "No lines like “Title, Employer | Location | Dates”, so an ATS may not pick out your jobs and dates.");
+  const norm = kwNorm(text), title = kwNorm(job.role || "");
+  add(!job.role || norm.includes(title), "The posting's job title", !job.role || norm.includes(title) ? `“${job.role}” appears, so a search for the title finds you.` : `“${job.role}” isn't in it. If it fits, put it in the summary's headline.`);
+  let keywords = null;
+  const kws = postingKeywords(job), onorm = kwNorm(original);
+  if (kws.length) {
+    const found = kws.filter(k => hasKeyword(k, text, norm)), gone = kws.filter(k => !hasKeyword(k, text, norm));
+    const dropped = gone.filter(k => original && hasKeyword(k, original, onorm)), lacking = gone.filter(k => !dropped.includes(k));
+    const pct = Math.round(100 * found.length / kws.length);
+    add(pct >= 70 && !dropped.length, "Keywords from the posting", `${found.length} of ${kws.length} (${pct}%).`
+      + (dropped.length ? ` Your resume has ${dropped.map(k => k.k).join(", ")}, but this version left ${dropped.length === 1 ? "it" : "them"} out: add ${dropped.length === 1 ? "it" : "them"} back.` : "")
+      + (lacking.length ? ` Not on your resume: ${lacking.map(k => k.k).join(", ")}. Add only what you really have.` : ""));
+    keywords = { found: found.map(k => k.k), dropped: dropped.map(k => k.k), lacking: lacking.map(k => k.k), pct };
+  }
+  const forms = DATE_FORMS.filter(([, rx]) => (text.match(rx) || []).length).map(([n]) => n);
+  add(forms.length <= 1, "Dates written one way", forms.length <= 1 ? "The dates all use the same form." : `Dates are written as ${forms.join(" and ")}. Pick one, for example Mon YYYY.`);
+  const bad = [...new Set((text.match(/[^\x00-\xFF‘’“”–—…•]|\t/gu) || []).map(c => c === "\t" ? "tabs" : `“${c}”`))];
+  if (/\*\*|^#+\s/m.test(text)) bad.push("markdown (** or #)");
+  add(!bad.length, "Plain characters", bad.length ? `Remove ${bad.join(", ")}: an ATS may garble them.` : "No symbols, emojis or tabs that could garble.");
+  const words = text.split(/\s+/).filter(Boolean).length;
+  add(words >= 300 && words <= 1100, "Length", words < 300 ? `${words} words: a little thin. Resumes that rank well usually have 400 to 900.`
+    : words > 1100 ? `${words} words: likely more than two pages. Trim older or less relevant bullets.` : `${words} words, about ${words > 650 ? "two pages" : "one to two pages"}.`);
+  return { checks, passed: checks.filter(c => c.ok).length, total: checks.length, keywords };
+}
+async function apiAts(req) {
+  const b = req.body, job = await jobById(b.id || "");
+  let original = "";
+  try { original = (await resumeFor(b.id)).text || ""; } catch (e) {}
+  return atsCheck(b.text, job, original);
 }
 
 /* ---------- jobinfo.py: how you apply, posting age, stale signals, the blocklist and pay ---------- */
@@ -2804,15 +2911,17 @@ function resumePrompt(job, resumeText, extra = "") {
 Format exactly like this:
 - Line 1: the candidate's name.
 - Line 2: contact details on one line separated by " | ".
-- Then sections. Each section heading on its own line in CAPITALS (for example SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION).
+- Then sections. Each section heading on its own line in CAPITALS.
 - For each job: a line "Title, Employer | Location | Dates", then bullets.
 - Bullets start with "- ".
 - Keep it to what fits on two pages.
 
+${atsRules(job)}
+
 Strict honesty rules:
 - Use ONLY facts in the candidate's resume. Never invent employers, titles, dates, numbers, degrees, certifications, tools, or skills.
 - You may reorder, regroup, trim, and reword. Use the employer's terminology only where the candidate's existing experience genuinely matches it.
-- Keep every employer, title and date exactly as given.
+- Keep every employer and title exactly as given, and every date's month and year.
 
 How to tailor:
 - Rewrite the summary (3 lines max) to speak directly to this role at ${job.company}.
@@ -2820,7 +2929,7 @@ How to tailor:
 - In each job, lead with the bullets that prove the requirements; tighten weak bullets with strong verbs and the outcome.
 - Bring relevant projects or certificates higher if they cover a gap.
 
-After the resume, write a line containing exactly ${NOTES_MARK} and then up to 5 short lines starting with "- ": what you changed and why, and anything the candidate should check or could add if true. These notes are for the candidate only.
+After the resume, write a line containing exactly ${NOTES_MARK} and then up to 5 short lines starting with "- ": what you changed and why, which of the posting's keywords the resume still lacks (to add only if true), and anything the candidate should check. These notes are for the candidate only.
 
 ${jobBlock(job)}
 
@@ -3162,11 +3271,13 @@ function kitPrompt(job, resumeText, extra = "") {
 
 Return the three parts in this order, each starting with its marker on a line of its own, exactly as written:
 ${KIT_MARKS[0]}
-A complete tailored resume in plain text (no # or **). Line 1 the candidate's name, line 2 contact details separated by " | ", then ALL-CAPS section headings, job lines "Title, Employer | Location | Dates", bullets starting "- ". Keep every employer, title and date exactly as given. Lead with what this job asks for. Two pages at most. After it, a line containing exactly ${NOTES_MARK} and up to 5 short lines starting "- " about what you changed and anything the candidate should check.
+A complete tailored resume in plain text (no # or **). Line 1 the candidate's name, line 2 contact details separated by " | ", then ALL-CAPS section headings, job lines "Title, Employer | Location | Dates", bullets starting "- ". Keep every employer, title and date exactly as given. Lead with what this job asks for. Two pages at most. Follow the ATS rules at the end. After it, a line containing exactly ${NOTES_MARK} and up to 5 short lines starting "- " about what you changed and anything the candidate should check.
 ${KIT_MARKS[1]}
 A cover letter of 250 to 320 words, plain text, blank line between paragraphs, naming the company, using the match points as evidence, addressing at most one gap briefly, ending with a short confident close and the candidate's name.
 ${KIT_MARKS[2]}
 Answers to these, each as "Question" on one line then the answer: Why do you want to work at ${job.company}? / Why are you a good fit for this role? / Describe a project you are proud of. / Tell us about a time you solved a hard problem. / What are your salary expectations? / When could you start? / Are you legally able to work in Canada? Keep each answer to 3 to 6 sentences. For anything the resume does not say (salary expectation, start date, work authorization), write a placeholder like [Fill in: your salary range] instead of guessing.
+
+For the resume: ${atsRules(job)}
 
 ${jobBlock(job)}
 
@@ -4099,9 +4210,10 @@ function resumeBlocks(text) {
 const letterParas = text => String(text).replace(/\r/g, "").trim().split(/\n\s*\n/).map(b => b.split("\n").map(l => l.trim().replace(/^#+\s*/, "")).filter(Boolean)).filter(p => p.length);
 const DEFAULT_PAGE = { top: 1008, bottom: 1008, left: 1152, right: 1152, width: 12240, height: 15840 };   // Letter, 0.7 and 0.8 inch margins
 
-async function buildDocx(kind, text, style) {
+/* info: the file's properties (title, author, subject, keywords), which an ATS may read along with the text */
+async function buildDocx(kind, text, style, info = {}) {
   const D = await lib("docx");
-  const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, LevelFormat } = D;
+  const { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle, LevelFormat, HeadingLevel } = D;
   const font = (style && style.font) || "Calibri", size = (style && style.size) || 10.5, hp = pt => Math.round(pt * 2);
   const page = (style && style.page && style.page.width) ? style.page : DEFAULT_PAGE;
   const body = kind === "resume" ? size : Math.max(size, 11);
@@ -4111,11 +4223,11 @@ async function buildDocx(kind, text, style) {
     for (const b of resumeBlocks(text)) {
       if (b.t === "name") children.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 }, children: [new TextRun({ text: b.s, bold: true, size: hp(size + 7), font })] }));
       else if (b.t === "contact") children.push(new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 40 }, children: [new TextRun({ text: b.s, size: hp(Math.max(size - 1, 8)), font })] }));
-      else if (b.t === "h") children.push(new Paragraph({ keepNext: true, spacing: { before: 200, after: 60 },
+      else if (b.t === "h") children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, keepNext: true, spacing: { before: 200, after: 60 },
         border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "7F8C95", space: 1 } },
         children: [new TextRun({ text: b.s, bold: true, size: hp(size + 1.5), color: "1F3A4D", font })] }));
       else if (b.t === "job") children.push(new Paragraph({ keepNext: true, spacing: { before: 100, after: 40 },
-        children: [new TextRun({ text: b.a, bold: true, size: hp(size), font }), ...(b.b ? [new TextRun({ text: "   " + b.b, italics: true, size: hp(size), font })] : [])] }));
+        children: [new TextRun({ text: b.a, bold: true, size: hp(size), font }), ...(b.b ? [new TextRun({ text: "  |  " + b.b, italics: true, size: hp(size), font })] : [])] }));
       else if (b.t === "li") children.push(new Paragraph({ numbering: { reference: "bul", level: 0 }, spacing: { after: 20 }, children: runs(b.s) }));
       else children.push(new Paragraph({ spacing: { after: 40 }, children: runs(b.s) }));
     }
@@ -4123,6 +4235,7 @@ async function buildDocx(kind, text, style) {
     for (const p of letterParas(text)) children.push(new Paragraph({ spacing: { after: 200 }, children: p.flatMap((l, i) => [...(i ? [new TextRun({ break: 1 })] : []), ...runs(l)]) }));
   }
   const doc = new Document({
+    creator: info.author || "", lastModifiedBy: info.author || "", title: info.title || "", subject: info.subject || "", keywords: info.keywords || "",
     styles: { default: { document: { run: { font, size: hp(body) }, paragraph: { spacing: { after: kind === "resume" ? 40 : 200, before: 0 } } } } },
     numbering: { config: [{ reference: "bul", levels: [{ level: 0, format: LevelFormat.BULLET, text: "•", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 360, hanging: 240 } } } }] }] },
     sections: [{ properties: { page: { size: { width: page.width, height: page.height }, margin: { top: page.top, bottom: page.bottom, left: page.left, right: page.right } } }, children }]
@@ -4132,16 +4245,20 @@ async function buildDocx(kind, text, style) {
 const PDF_MAP = { "‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "...", " ": " ", "•": "-", "→": "->", "←": "<-", "≈": "~", "≤": "<=", "≥": ">=" };
 const pdfSafe = s => String(s).replace(/[^\x00-\xFF]/g, c => PDF_MAP[c] !== undefined ? PDF_MAP[c] : c.normalize("NFKD").replace(/[^\x00-\xFF]/g, ""));
 const SERIF = /times|georgia|garamond|cambria|book|palatino|serif|baskerville/i;
-async function buildPdf(kind, text, style, title) {
+async function buildPdf(kind, text, style, title, info = {}) {
   const { jsPDF } = await lib("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "letter" });
-  doc.setProperties({ title: title || "" });
+  doc.setProperties({ title: pdfSafe(info.title || title || ""), author: pdfSafe(info.author || ""), subject: pdfSafe(info.subject || ""),
+    keywords: pdfSafe(info.keywords || ""), creator: "Job tracker" });
+  if (doc.setLanguage) doc.setLanguage("en-CA");
   const W = 612, H = 792, MX = 57.6, MY = 50.4, CW = W - 2 * MX, F = SERIF.test((style && style.font) || "") ? "times" : "helvetica";
   const INK = [20, 26, 42], MUTED = [85, 91, 102], ACC = [31, 58, 77];
   let y = MY;
   const ensure = h => { if (y + h > H - MY) { doc.addPage(); y = MY; } };
   const setF = (st, size, color) => { doc.setFont(F, st); doc.setFontSize(size); doc.setTextColor(...color); };
-  function richLine(segs, x, size) { let cx = x; for (const s of segs) { setF(s.bold ? "bold" : "normal", size, INK); doc.text(s.text, cx, y); cx += doc.getTextWidth(s.text); } }
+  // one text run per stretch of the same weight, so a reader (or an ATS) gets whole lines rather than single words
+  const joinRuns = segs => segs.reduce((a, s) => { const l = a[a.length - 1]; if (l && l.bold === s.bold) l.text += s.text; else a.push({ text: s.text, bold: s.bold }); return a; }, []);
+  function richLine(segs, x, size) { let cx = x; for (const s of joinRuns(segs)) { setF(s.bold ? "bold" : "normal", size, INK); doc.text(s.text, cx, y); cx += doc.getTextWidth(s.text); } }
   function wrapRich(s, width, size) {
     const words = [];
     docRuns(pdfSafe(s)).forEach(r => r.text.split(/(\s+)/).forEach(w => { if (w) words.push({ text: w, bold: r.bold }); }));
@@ -4168,11 +4285,11 @@ async function buildPdf(kind, text, style, title) {
       else if (b.t === "h") { ensure(34); y += 10; setF("bold", 12, ACC); y += 12; doc.text(pdfSafe(b.s), MX, y); y += 4; doc.setDrawColor(154, 163, 173); doc.setLineWidth(.7); doc.line(MX, y, W - MX, y); y += 6; }
       else if (b.t === "job") {
         ensure(30); y += 5;
-        const a = pdfSafe(b.a), r = b.b ? "   " + pdfSafe(b.b) : "";
+        const a = pdfSafe(b.a), r = b.b ? "  |  " + pdfSafe(b.b) : "";   // the bar keeps employer and location apart for a parser
         setF("bold", 10.5, INK); const wa = doc.getTextWidth(a);
         setF("italic", 10.5, MUTED); const wr = doc.getTextWidth(r);
         if (wa + wr <= CW) { y += 10.5; setF("bold", 10.5, INK); doc.text(a, MX, y); setF("italic", 10.5, MUTED); doc.text(r, MX + wa, y); y += 4; }
-        else { para("**" + b.a + "**", { gap: 0 }); if (r) { setF("italic", 10.5, MUTED); for (const l of doc.splitTextToSize(r.trim(), CW)) { ensure(15); y += 10.5; doc.text(l, MX, y); y += 4; } } }
+        else { para("**" + b.a + "**", { gap: 0 }); if (r) { setF("italic", 10.5, MUTED); for (const l of doc.splitTextToSize(r.replace(/^\s*\|\s*/, ""), CW)) { ensure(15); y += 10.5; doc.text(l, MX, y); y += 4; } } }
         y += 2;
       }
       else if (b.t === "li") { const lines = wrapRich(b.s, CW - 14, 10.5); lines.forEach((ln, k) => { ensure(15); y += 10.5; if (k === 0) { doc.setFillColor(...ACC); doc.circle(MX + 4, y - 3.4, 1.6, "F"); } richLine(ln, MX + 14, 10.5); y += 4; }); y += 1; }
@@ -4361,7 +4478,7 @@ const STATIC_GUIDE = [
     steps: [
       { text: "Click a job to see what they ask for, where your resume matches and the gaps to cover, each as a short list. The closing date shows when the posting gives one.", img: "st-09-applications.jpg", caption: "Applications: every job, and the one you opened." },
       { text: "**Open listing** takes you to the posting itself. **Company careers page** opens the employer's own jobs page when the search found one; otherwise **Search for it** looks it up on the web." },
-      { text: "**Craft resume** and **Draft cover letter** write versions tailored to this job, using only what's on your resume. Read them, edit anything, then **Save Word and PDF**. They appear on the Resume tab under Custom resumes and Cover letters." },
+      { text: "**Craft resume** and **Draft cover letter** write versions tailored to this job, using only what's on your resume. The resume is laid out for applicant tracking systems (ATS), and an **ATS check** under it lists what passes and what to fix, including keywords from the posting that are missing. Read them, edit anything, then **Save Word and PDF**. They appear on the Resume tab under Custom resumes and Cover letters." },
       { text: "**Research the company** and **Interview prep** open the job's company page. See **Prepare for interviews** below." },
       { text: "After applying, click **Mark as applied today**. Keep the status, next step and follow-up date up to date, and Home reminds you when a follow-up is due." },
     ] },
@@ -4536,7 +4653,10 @@ async function apiSave(req) {
   let stem = base, i = 1;
   while (have.has((stem + ".docx").toLowerCase()) || have.has((stem + ".pdf").toLowerCase())) { i++; stem = `${base} v${i}`; }
   const style = source.style || null, meta = { kind, jobId: job.id || b.id, role: job.role, company: job.company, from: source.file || "" };
-  const docx = await buildDocx(kind, text, style), pdf = await buildPdf(kind, text, style, stem);
+  const who = kind === "resume" ? ((resumeBlocks(text)[0] || {}).s || "") : "";
+  const info = { title: stem, author: who, subject: `${kind === "resume" ? "Resume" : "Cover letter"}: ${job.role}, ${job.company}`,
+    keywords: kind === "resume" ? (atsCheck(text, job).keywords || { found: [] }).found.join(", ") : "" };
+  const docx = await buildDocx(kind, text, style, info), pdf = await buildPdf(kind, text, style, stem, info);
   const relD = await putFile(folder, stem + ".docx", docx, DOCX_MIME, meta), relP = await putFile(folder, stem + ".pdf", pdf, "application/pdf", meta);
   const notes = String(b.notes || "").trim();
   if (notes) {
@@ -5120,7 +5240,7 @@ const ROUTES = {
   "/api/calendar.ics": apiCalendar, "/api/offers": apiOffers,
   "/api/find/config": async req => req.method === "POST" ? notHere("The automatic finder")() : Object.assign(publicFind(), { trackerExists: await trackerExists() }),
   "/api/find/company": notHere("The automatic finder"), "/api/find/run": notHere("The automatic finder"),
-  "/api/tracker/create": apiTrackerCreate, "/api/tracker/import": apiTrackerImport, "/api/prompts": apiPrompts,
+  "/api/tracker/create": apiTrackerCreate, "/api/tracker/import": apiTrackerImport, "/api/prompts": apiPrompts, "/api/ats": apiAts,
   "/api/search/state": apiSearchState, "/api/search": notHere("Searching the web with an API key"), "/api/search/local": apiSearchLocal, "/api/search/parse": apiSearchParse,
   "/api/tracker/add": apiTrackerAdd, "/api/search/export": apiSearchExport, "/api/search/tracker-file": apiSearchTrackerFile,
   "/api/guide": apiGuide, "/api/guide.pdf": async () => { printGuide(); return { ok: true }; },
@@ -6374,7 +6494,7 @@ function renderDetail(){
   </div>
   <div class="sec letter" id="resumeSec">
     <h3>Resume for this job</h3>
-    <p class="note" style="margin-bottom:10px">Reorders and rewords your resume around what this employer asks for, using only experience you’ve already listed. It won’t add skills you don’t have. Save it as a Word file (using your resume’s font and margins) and a PDF, both in this job’s folder.</p>
+    <p class="note" style="margin-bottom:10px">Reorders and rewords your resume around what this employer asks for, using only experience you’ve already listed. It won’t add skills you don’t have. It’s written for applicant tracking systems (ATS): standard headings, one column, the posting’s own keywords, and an ATS check underneath. Save it as a Word file (using your resume’s font and margins) and a PDF, both in this job’s folder.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <button class="btn primary" type="button" id="resumeBtn">Craft resume</button>
       <button class="btn hidden" type="button" id="resumeStop">Stop</button>
@@ -6382,7 +6502,7 @@ function renderDetail(){
       <span class="dlset hidden" id="resumeSave"><button class="btn" type="button" data-fmt="both">Save Word and PDF</button></span>
     </div>
     <textarea id="resumeOut" class="hidden" aria-label="Tailored resume" style="min-height:420px"></textarea>
-    <div class="note" id="resumeNote" style="white-space:pre-line"></div><div class="savedfile" id="resumeFile"></div>
+    <div class="note" id="resumeNote" style="white-space:pre-line"></div><div class="ats hidden" id="resumeAts" aria-live="polite"></div><div class="savedfile" id="resumeFile"></div>
   </div>
   ${kitSec(Object.assign({id},j))}
   ${msgSec(j,p)}
@@ -6429,16 +6549,31 @@ function setupDrafts(j){
   setupDraft(j,{key:"resume",label:"Craft resume",again:"Craft again"});
 }
 const NOTES_MARK="=== NOTES ===";
+/* ATS check under a tailored resume: what an applicant tracking system needs, passed or not, with what to fix. */
+let atsSeq=0;
+async function runAts(el,id,text){
+  const seq=++atsSeq;
+  if(!String(text||"").trim()){el.classList.add("hidden");return}
+  let r;try{r=await api("/api/ats",{id,text})}catch(e){return}
+  if(seq!==atsSeq||!document.body.contains(el))return;
+  const k=r.keywords;
+  el.innerHTML=`<div class="atshead"><b>ATS check</b><span>${r.passed} of ${r.total} passed${k?` · ${k.pct}% of the posting’s keywords`:""}</span></div>
+    <ul class="atslist">${r.checks.map(c=>`<li class="${c.ok?"ok":"warn"}"><span class="atsmark" aria-hidden="true">${c.ok?"✓":"!"}</span><div><b>${esc(c.label)}</b> <span>${esc(c.detail)}</span></div></li>`).join("")}</ul>
+    <p class="note">Edit the resume above and the check updates. It looks at what an ATS reads: headings, contact details, job lines, dates, characters, and the keywords from this listing’s “What they ask for”.</p>`;
+  el.classList.remove("hidden");
+}
 function setupDraft(j,o){
   const out=$(o.key+"Out"),note=$(o.key+"Note"),btn=$(o.key+"Btn"),stop=$(o.key+"Stop"),copy=$(o.key+"Copy"),save=$(o.key+"Save"),fileEl=$(o.key+"File");
   const cacheKey=j.id+":"+o.key;let ctl=null;
-  const showDone=()=>{copy.classList.remove("hidden");save.classList.remove("hidden");btn.textContent=o.again};
+  const ats=o.key==="resume"&&$("resumeAts");let atsTimer=0;
+  const checkAts=()=>{if(ats)runAts(ats,j.id,out.value)};
+  const showDone=()=>{copy.classList.remove("hidden");save.classList.remove("hidden");btn.textContent=o.again;checkAts()};
   const prev=DRAFTS[cacheKey];
   if(prev){out.value=prev.text;out.classList.remove("hidden");note.textContent=prev.notes||"";showDone();if(prev.saved)showSaved(fileEl,prev.saved,j.id)}
   const saveBtn=save.querySelector("button[data-fmt]");
   const setSaveLabel=()=>{saveBtn.textContent=DRAFTS[cacheKey]&&DRAFTS[cacheKey].saved?"Save changes as Word and PDF":"Save Word and PDF"};
   setSaveLabel();
-  out.oninput=()=>{if(DRAFTS[cacheKey])DRAFTS[cacheKey].text=out.value};
+  out.oninput=()=>{if(DRAFTS[cacheKey])DRAFTS[cacheKey].text=out.value;if(ats){clearTimeout(atsTimer);atsTimer=setTimeout(checkAts,500)}};
   /* Writes the Word file and the PDF into the job's folder, then shows Open PDF and Open folder under the draft. */
   const saveBoth=async(auto)=>{
     if(!out.value.trim())return;
@@ -6469,6 +6604,7 @@ function setupDraft(j,o){
     }
     ctl=new AbortController();
     btn.disabled=true;stop.classList.remove("hidden");copy.classList.add("hidden");save.classList.add("hidden");out.classList.remove("hidden");fileEl.innerHTML="";
+    if(ats)ats.classList.add("hidden");
     out.value="Thinking…";note.textContent="";S.drafting++;
     let text="",err="";
     try{
