@@ -13,6 +13,33 @@ In the app it's the **Watch the tour** button at the top of every page.
 Chrome and Edge work best; Firefox and Safari work too. The How to use guide (the **How to use** button) walks through
 every step, with the tour at the top.
 
+## What it does
+
+- **Find jobs**: describe what you want (or leave it to your resume), and your chat searches the web. Results show
+  each posting's fit, what it asks for, where your resume matches and the gaps, and go into your job tracker file.
+- **Applications**: every job in one list, best to apply for first, with status, follow-up dates and notes.
+  Home reminds you when a follow-up is due.
+- **ATS-ready resumes**: **Craft resume** tailors your resume to one posting, using only what's on it, in a layout
+  applicant tracking systems read well: one column, standard headings, the posting's own keywords. The **ATS check**
+  under it lists what passes and what to fix, including keywords from the posting your resume lacks (add them
+  only if they're true). The **Resume** tab has four example ATS resumes (software developer, software engineering
+  manager, HR associate, administrative assistant) to compare with.
+- **Cover letters** and an **application kit** (resume, letter and ready-to-paste answers), saved as Word and PDF.
+- **Interview prep**: a company briefing (with ratings and sources when your chat searched the web) and an interview
+  guide with your pitch, likely questions and stories from your resume. **Practise** gives feedback on your answers.
+
+## Using free ChatGPT (or Claude)
+
+In **Settings**, **Drafting with**, pick **Free chat (copy and paste)**. For each task Job tracker writes the prompt:
+
+1. Click **Copy prompt**, open a new chat at chatgpt.com (no account needed) and paste it. For finding jobs and
+   company research, leave web search on.
+2. When the reply is finished, click ChatGPT's own **copy** button under it, rather than selecting the text.
+3. Paste it into **The chat's reply** and click the button under it.
+
+Job tracker tidies what ChatGPT's copy adds: block labels such as "Writing", escaped characters, citation marks and
+lines that ran together. Resume prompts ask ChatGPT for a code block, so every line break survives the copy.
+
 ## How it works
 
 - The site is a single static page (`index.html`). There is no server behind it: everything you add is kept
@@ -56,7 +83,7 @@ network**). Click **Allow**. If you clicked Block, use the icon at the left of t
 
 1. In the Developer tab (the server), start the server and switch on **Enable CORS**.
 2. In Job tracker: server address `http://localhost:1234/v1` and the model name, then **Test connection**.
-   If LM Studio runs on another computer, use that computer's address, for example `http://192.168.2.132:1234/v1`,
+   If LM Studio runs on another computer, use that computer's address, for example `http://192.168.1.20:1234/v1`,
    and switch on **Serve on Local Network** in LM Studio. Because the site is HTTPS and LM Studio is plain HTTP,
    a model on another computer only works in Chrome and Edge (after you allow local network access);
    other browsers block it. A model on the same computer (`localhost`) works in every browser.
@@ -111,6 +138,16 @@ real resumes, trackers or personal details. The guide screenshots use made-up da
    then pick the branch and the **/ (root)** folder, and **Save**.
 2. A minute or two later the site is at `https://<your-github-name>.github.io/<repository-name>/`. Every push to that
    branch publishes again.
+
+### Your own copy (fork)
+
+1. On GitHub, **Fork** this repository to your account.
+2. In your fork, turn on Pages as above. Your copy is at `https://<your-github-name>.github.io/<repository-name>/`.
+
+Nothing in the code needs changing: the app works out its own address, so its setup links point to your fork's
+README. Each copy keeps its own data, because browsers keep a site's data by its address.
+
+### Notes for changing it
 
 `.nojekyll` tells GitHub Pages to serve the files as they are. There is no build step: `index.html` is the app.
 To try a change before pushing, serve this folder from any local web server, for example
