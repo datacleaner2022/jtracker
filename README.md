@@ -2,11 +2,16 @@
 
 Job tracker as one web page, hosted for free on GitHub Pages: nothing to install, no server, no account.
 
-**Open it:** https://janeset.github.io/job-tracker-webapp/
+**Open it:** once GitHub Pages is on (see [Publishing](#publishing-for-the-repository-owner)), the site is at
+`https://<your-github-name>.github.io/<repository-name>/`.
 
-Chrome and Edge work best; Firefox and Safari work too. The How to use guide (the **How to use** button) walks through it,
-starting with a five-minute video tour ([guide/tutorial.mp4](guide/tutorial.mp4)) that uses a made-up sample resume and
-free ChatGPT.
+[![Watch the five-minute tour](guide/tutorial.jpg)](guide/tutorial.mp4)
+
+**[Watch the five-minute tour](guide/tutorial.mp4)**: every feature, with a made-up sample resume and free ChatGPT.
+In the app it's the **Watch the tour** button at the top of every page.
+
+Chrome and Edge work best; Firefox and Safari work too. The How to use guide (the **How to use** button) walks through
+every step, with the tour at the top.
 
 ## How it works
 
@@ -31,7 +36,8 @@ free ChatGPT.
 
 ## Using a local model (Ollama or LM Studio)
 
-The site is served over HTTPS from `https://janeset.github.io`, and your model runs on your own computer.
+The site is served over HTTPS from `https://<your-github-name>.github.io`, and your model runs on your own computer.
+(Settings, **Local model**, shows the exact address to use.)
 The model has to allow this site to talk to it, and the browser asks you once to allow it too:
 Chrome and Edge show **"… wants to access other apps and services on this device"** (or **devices on your local
 network**). Click **Allow**. If you clicked Block, use the icon at the left of the address bar to change it.
@@ -40,9 +46,9 @@ network**). Click **Allow**. If you clicked Block, use the icon at the left of t
 
 1. Quit Ollama.
 2. Set the environment variable `OLLAMA_ORIGINS` to the site's address, then start Ollama again.
-   - Windows: `setx OLLAMA_ORIGINS "https://janeset.github.io"`
-   - macOS: `launchctl setenv OLLAMA_ORIGINS "https://janeset.github.io"`
-   - Linux: add `Environment="OLLAMA_ORIGINS=https://janeset.github.io"` to the ollama service, then restart it
+   - Windows: `setx OLLAMA_ORIGINS "https://<your-github-name>.github.io"`
+   - macOS: `launchctl setenv OLLAMA_ORIGINS "https://<your-github-name>.github.io"`
+   - Linux: add `Environment="OLLAMA_ORIGINS=https://<your-github-name>.github.io"` to the ollama service, then restart it
 3. In Job tracker: **Settings**, **Drafting with**, **Local model**. Server address `http://localhost:11434/v1`,
    the model you pulled (for example `llama3.1:8b`), then **Test connection**.
 
@@ -94,7 +100,7 @@ which are put back when you paste the reply. Nothing else leaves this page, exce
 your own local model. GitHub serves the page but never sees what you put into it.
 
 Browsers keep a site's saved data by its address, and every GitHub Pages site of the same account shares
-`janeset.github.io`. Only publish pages you trust under this account.
+`<your-github-name>.github.io`. Only publish pages you trust under that account.
 
 ## Publishing (for the repository owner)
 
@@ -103,7 +109,7 @@ real resumes, trackers or personal details. The guide screenshots use made-up da
 
 1. On GitHub: **Settings**, **Pages**, **Build and deployment**, Source **Deploy from a branch**,
    then pick the branch and the **/ (root)** folder, and **Save**.
-2. A minute or two later the site is at https://janeset.github.io/job-tracker-webapp/. Every push to that
+2. A minute or two later the site is at `https://<your-github-name>.github.io/<repository-name>/`. Every push to that
    branch publishes again.
 
 `.nojekyll` tells GitHub Pages to serve the files as they are. There is no build step: `index.html` is the app.

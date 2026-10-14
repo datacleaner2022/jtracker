@@ -167,6 +167,21 @@ h1::before{content:"";width:22px;height:22px;border:1.5px solid var(--amber);bor
 .track textarea{min-height:70px;resize:vertical}
 .saved{font-size:12.5px;color:var(--green);min-height:18px;margin-top:6px}
 .savedfile{margin-top:8px;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#tourDlg{width:min(980px,calc(100vw - 32px));max-width:none;padding:18px 18px 14px}
+#tourDlg .tourhead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+#tourDlg h2{margin:0;font-size:20px}
+#tourDlg video{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:#0f1220}
+#tourDlg .note{margin:10px 2px 0}
+.htour{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:20px;align-items:center;margin:16px 0}
+.htour h3{margin:0 0 6px}
+.htour .note{margin:0 0 12px}
+.htourpic{position:relative;display:block;padding:0;border:0;border-radius:12px;overflow:hidden;cursor:pointer;background:#0f1220;aspect-ratio:16/9}
+.htourpic img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.htourpic:hover img{transform:scale(1.03)}
+.htourplay{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.92);box-shadow:0 6px 20px rgba(0,0,0,.35)}
+.htourplay::after{content:"";position:absolute;left:21px;top:16px;border-style:solid;border-width:11px 0 11px 17px;border-color:transparent transparent transparent #4b2c8f}
+@media (max-width:640px){.htour{grid-template-columns:1fr}}
+@media (max-width:860px){#tourBtn{font-size:0;gap:0}}
 .gsteps figure video{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:#0f1220}
 pre.exres{white-space:pre-wrap;word-break:break-word;margin:0;padding:14px 16px;max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2);color:var(--ink);font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
 .ats{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2)}
@@ -2125,7 +2140,7 @@ button,.btn,.views button,.inuse-item,.slbar-toggle{-webkit-user-select:none;use
         <label>Model<input type="text" id="lModel"></label>
         <label>API key (usually blank)<input type="password" id="lKey" autocomplete="off"></label>
         <label>Web search plugin (LM Studio, optional)<input type="text" id="lWeb" placeholder="e.g. exa"></label>
-        <p class="note">With a web search plugin set up in LM Studio’s mcp.json, Find jobs can search the web with your local model. <a href="https://github.com/janeset/job-tracker-webapp#readme" target="_blank" rel="noopener">The setup steps</a> show how.</p>
+        <p class="note">With a web search plugin set up in LM Studio’s mcp.json, Find jobs can search the web with your local model. <a href="README.md" data-setup target="_blank" rel="noopener">The setup steps</a> show how.</p>
         <p class="note">Ollama: http://localhost:11434/v1 and a model you’ve pulled, e.g. llama3.1:8b. LM Studio: http://localhost:1234/v1 with the server started.</p>
       </div>
       <div class="row2"><button class="btn small" type="button" id="testAi">Test connection</button><span class="note" id="testOut"></span></div>
@@ -2809,7 +2824,12 @@ function buildIcs(events) {
 
 /* ---------- ai.py: the prompts, the reply parsers, and talking to a local model ---------- */
 const NOTES_MARK = "=== NOTES ===";
-const SETUP_URL = "https://github.com/janeset/job-tracker-webapp#readme";
+/* The setup steps: the README of the repository this copy is published from (name.github.io/repo → github.com/name/repo),
+   so a fork links to its own; anywhere else, the README served next to the page. */
+const SETUP_URL = (() => {
+  const user = (/^([\w-]+)\.github\.io$/i.exec(location.hostname) || [])[1], repo = location.pathname.split("/").filter(Boolean)[0];
+  return user ? `https://github.com/${user}/${repo && !/\.html?$/.test(repo) ? repo : user + ".github.io"}#readme` : new URL("README.md", location.href).href;
+})();
 const CORS_HINT = "if it is running, it may be turning this page away. For Ollama, set OLLAMA_ORIGINS to this site's address (" + location.origin + "); for LM Studio, switch on CORS in its server settings. If the browser asked to let this site reach devices on your local network, allow it. Setup steps: " + SETUP_URL;
 
 /* This page is served over HTTPS (GitHub Pages) and the local model over plain HTTP. Browsers allow that for
@@ -4429,7 +4449,7 @@ const STATIC_GUIDE = [
   { id: "start", title: "Start Job tracker",
     intro: "Job tracker is one web page that runs in your browser. There's nothing to install, and everything you add stays in this browser, on this computer.",
     steps: [
-      { text: "Go to the Job tracker site, **janeset.github.io/job-tracker-webapp**. **Chrome** and **Edge** work best: they can save your files straight into a folder on your computer." },
+      { text: "Open the Job tracker site in your browser. **Chrome** and **Edge** work best: they can save your files straight into a folder on your computer." },
       { text: "Bookmark the page and use the same browser each time. Your resume, job tracker file and documents are kept in that browser, so another browser starts empty." },
       { text: "On a fresh start, **Home** shows three steps: **upload your resume**, **search for jobs** to create your job tracker file, then **see your applications**. Each step gets a tick when it's done.", img: "st-01-home-fresh.jpg", caption: "A fresh start: three steps on Home." },
       { text: "Under the tabs, **Resume** and **Job tracker file** show what's in use, with a green dot. Click either one to change it.", img: "st-11-home.jpg", caption: "Home with a resume and a job tracker file in use." },
@@ -4457,7 +4477,7 @@ const STATIC_GUIDE = [
     intro: "A local model is a free AI that runs on your own computer. Job tracker sends it requests through its API (the same kind ChatGPT uses), so drafts come back by themselves and nothing is sent over the internet.",
     steps: [
       { text: "Install **Ollama** (ollama.com) or **LM Studio** (lmstudio.ai) and download a model. With Ollama, run **ollama pull llama3.1:8b** in a terminal. A computer with 16 GB of memory or more works best." },
-      { text: "Let this site talk to it. **Ollama**: set the environment variable **OLLAMA_ORIGINS** to **https://janeset.github.io** (this site's address) and restart Ollama. **LM Studio**: start the server in the Developer tab and switch on **Enable CORS**. Without this the browser blocks the connection. The first time, Chrome and Edge ask whether this site may reach devices on your local network: click **Allow**. The README on GitHub (github.com/janeset/job-tracker-webapp) has the details." },
+      { text: "Let this site talk to it. **Ollama**: set the environment variable **OLLAMA_ORIGINS** to this site's address (shown in Settings under **Local model**, for example https://yourname.github.io) and restart Ollama. **LM Studio**: start the server in the Developer tab and switch on **Enable CORS**. Without this the browser blocks the connection. The first time, Chrome and Edge ask whether this site may reach devices on your local network: click **Allow**. The README that comes with Job tracker has the details." },
       { text: "In **Settings**, **General**, choose **Local model**. Fill in **Server address** (Ollama: http://localhost:11434/v1, LM Studio: http://localhost:1234/v1) and **Model** (the name you downloaded, for example llama3.1:8b). Leave **API key** blank unless your server asks for one.", img: "st-03-settings-local.jpg", caption: "Local model: the server address and model of Ollama or LM Studio." },
       { text: "Click **Test connection**. When it says it worked, click **Save settings**. The badge at the top right now says **Local model**." },
       { text: "Now **Craft resume**, **Draft cover letter**, research and interview prep write straight into Job tracker. Company research comes from what the model already knows." },
@@ -5554,6 +5574,7 @@ function setupPage() {
     <div class="row2 end" style="margin-top:16px"><button class="btn" type="button" id="slDlgClose">Close</button></div></dialog>
     <input type="file" id="slTrkFile" class="hidden" accept=".xlsx"><input type="file" id="slRestoreFile" class="hidden" accept=".json,application/json">`);
   $("slDlgClose").onclick = () => $("slDlg").close();
+  document.querySelectorAll("a[data-setup]").forEach(a => { a.href = SETUP_URL; });
   $("slTrkFile").onchange = () => { const f = $("slTrkFile").files[0]; $("slTrkFile").value = ""; if (f) importPicked(f); };
   $("slRestoreFile").onchange = () => { const f = $("slRestoreFile").files[0]; $("slRestoreFile").value = ""; if (f) restoreAll(f); };
   const banner = $("banner");
@@ -5607,6 +5628,23 @@ function effectiveTheme() {
   return t === "light" || t === "dark" ? t : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 const SUN = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1.05 1.05M11.35 11.35l1.05 1.05M3.6 12.4l1.05-1.05M11.35 4.65l1.05-1.05"/></svg>';
+const PLAY = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><path d="M6.6 5.5v5l4-2.5z" fill="currentColor"/></svg>';
+/* The five-minute tour (guide/tutorial.mp4) in a player of its own: from the header, the Home card and the guide. */
+function openTour() {
+  let d = $("tourDlg");
+  if (!d) {
+    document.body.insertAdjacentHTML("beforeend", `<dialog id="tourDlg" aria-labelledby="tourTitle"><div class="tourhead"><h2 id="tourTitle">Job tracker in five minutes</h2>
+      <button class="btn small" type="button" id="tourClose">Close</button></div>
+      <video id="tourVid" controls playsinline preload="none" poster="guide/tutorial.jpg" src="guide/tutorial.mp4" aria-label="Job tracker tour, with captions and background music"></video>
+      <p class="note">Every feature, with a made-up sample resume and free ChatGPT. The captions are in the picture; turn the music down with the player's volume.</p></dialog>`);
+    d = $("tourDlg");
+    $("tourClose").onclick = () => d.close();
+    d.addEventListener("close", () => $("tourVid").pause());
+  }
+  d.showModal();
+  $("tourVid").play().catch(() => {});
+}
+document.addEventListener("click", e => { if (e.target.closest && e.target.closest('[data-act="tour"]')) { e.preventDefault(); openTour(); } });
 const COG = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.9 1.75h2.2l.35 1.7c.43.17.83.4 1.2.7l1.65-.55 1.1 1.9-1.3 1.15a5 5 0 0 1 0 1.4l1.3 1.15-1.1 1.9-1.65-.55c-.37.3-.77.53-1.2.7l-.35 1.7H6.9l-.35-1.7a4.9 4.9 0 0 1-1.2-.7l-1.65.55-1.1-1.9 1.3-1.15a5 5 0 0 1 0-1.4L2.6 5.5l1.1-1.9 1.65.55c.37-.3.77-.53 1.2-.7z"/><circle cx="8" cy="8" r="2"/></svg>';
 const MOON = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.25 9.6A5.5 5.5 0 0 1 6.4 2.75a5.5 5.5 0 1 0 6.85 6.85z"/></svg>';
 function setupLook() {
@@ -5655,6 +5693,7 @@ function setupLook() {
   }
   const guideBtn = $("guideBtn");
   if (guideBtn && !guideBtn.dataset.renamed) { guideBtn.dataset.renamed = "1"; guideBtn.textContent = "How to use"; }
+  if (guideBtn && !$("tourBtn")) guideBtn.insertAdjacentHTML("beforebegin", `<button class="btn" id="tourBtn" type="button" data-act="tour" title="Watch the five-minute tour">${PLAY}Watch the tour</button>`);
   const bar = document.querySelector(".topbar");
   const barH = () => document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px");
   if (bar) barH();
@@ -7472,7 +7511,11 @@ function renderHome(){
     ${step(2,hasJobs,"Search for jobs",hasJobs?`Your tracker has ${all.length} ${all.length===1?"listing":"listings"}.`:"Find jobs looks for roles that fit you, and the results become your tracker.",`<button class="btn small${hasResume&&!hasJobs?" primary":" ghost"}" type="button" data-go="search">Find jobs</button>`)}
     ${step(3,false,"See your applications","Every role you add lands in Applications, ready to apply and track.",`<button class="btn small${hasJobs?" primary":" ghost"}" type="button" data-go="tracker">Applications</button>`)}
   </ol></section>`;
-  el.innerHTML=`${steps}
+  // new here: the five-minute tour, above the steps (the header's Watch the tour button plays it any time)
+  const tour=hasResume&&hasJobs?"":`<section class="panel htour"><button type="button" class="htourpic" data-act="tour" aria-label="Play the five-minute tour"><img src="guide/tutorial.jpg" alt=""><span class="htourplay" aria-hidden="true"></span></button>
+    <div><h3>New here? Watch the five-minute tour</h3><p class="note">Every feature with a sample resume and free ChatGPT: find jobs, tailor an ATS-ready resume, write a cover letter and prepare for the interview.</p>
+    <button class="btn primary small" type="button" data-act="tour">Watch the tour</button></div></section>`;
+  el.innerHTML=`${tour}${steps}
   <div class="doors">
     <button type="button" class="door" data-go="search"><span class="go">${ARROW}</span><span class="dk">${icon("search")}Find jobs</span><span class="dn">${found||"New"}</span><span class="dl">${found?(found===1?"result waiting to review":"results waiting to review"):"roles to discover"}</span><span class="ds">${esc(SEARCH.webText())}</span></button>
     <button type="button" class="door" data-go="tracker"><span class="go">${ARROW}</span><span class="dk">${icon("briefcase")}Applications</span><span class="dn">${q.length}</span><span class="dl">${q.length===1?"role":"roles"} to apply for</span><span class="ds">${active.length} in progress${due.length?`, ${due.length} ${due.length===1?"follow-up":"follow-ups"} due`:""}</span></button>
