@@ -237,6 +237,7 @@ dialog h2{font:500 32px/1.1 var(--display);margin:0 0 14px}
 .chatsteps{margin:0 0 12px;padding-left:20px;color:var(--muted);font-size:14px;line-height:1.6}
 .chatsteps li{margin:2px 0}
 .chatlinks a{margin-left:8px;color:var(--amber);font-weight:600}
+.chatlinks select{width:auto;max-width:100%;padding:3px 6px}
 dialog#chatDlg textarea{width:100%;box-sizing:border-box}
 dialog#chatDlg label{display:block;margin:10px 0 4px}
 #setForm{padding:24px 26px;display:flex;flex-direction:column;gap:16px;overflow:auto}
@@ -2271,7 +2272,20 @@ body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved d
 <dialog id="chatDlg" aria-labelledby="chatTitle">
   <h2 id="chatTitle">Ask your chat</h2>
   <ol class="chatsteps">
-    <li>Copy the prompt, then open a new chat. <span class="chatlinks"><a href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT</a> <a href="https://claude.ai/new" target="_blank" rel="noopener">Claude</a></span></li>
+    <li>Copy the prompt, then open a free chat: <span class="chatlinks"><select id="chatSite" aria-label="Free AI chat">
+      <option value="https://chatgpt.com/">ChatGPT</option>
+      <option value="https://claude.ai/new">Claude</option>
+      <option value="https://gemini.google.com/app">Gemini</option>
+      <option value="https://copilot.microsoft.com/">Microsoft Copilot</option>
+      <option value="https://www.perplexity.ai/">Perplexity</option>
+      <option value="https://chat.deepseek.com/">DeepSeek</option>
+      <option value="https://chat.mistral.ai/chat">Mistral Le Chat</option>
+      <option value="https://grok.com/">Grok</option>
+      <option value="https://chat.qwen.ai/">Qwen</option>
+      <option value="https://www.kimi.com/">Kimi</option>
+      <option value="https://chat.z.ai/">Z.ai (GLM)</option>
+    </select> <a id="chatOpen" href="https://chatgpt.com/" target="_blank" rel="noopener">Open</a></span>
+    <span class="note hidden" id="chatAsiaNote" style="display:block;margin-top:4px">DeepSeek, Qwen, Kimi and Z.ai are run from China. Your prompt still includes your work history, so choose another chat if that worries you.</span></li>
     <li>Paste it in and send. <span id="chatWebHint"></span></li>
     <li>Copy the whole reply and paste it below.</li>
   </ol>
@@ -8319,6 +8333,11 @@ function askChat(o){
     $("chatAlt").checked=true;$("chatAltLabel").textContent=o.altLabel||"";
     $("chatAlt").onchange=()=>{$("chatPrompt").value=cur()};
     $("chatPrompt").value=cur();$("chatReply").value="";$("chatErr").textContent="";$("chatCopied").textContent="";
+    try{$("chatSite").value=localStorage.getItem("jobline-chat-site")||""}catch(e){}
+    if(!$("chatSite").value)$("chatSite").selectedIndex=0;
+    const asia=()=>$("chatAsiaNote").classList.toggle("hidden",!/deepseek|qwen|kimi|z\.ai/.test($("chatSite").value));
+    $("chatOpen").href=$("chatSite").value;asia();
+    $("chatSite").onchange=()=>{$("chatOpen").href=$("chatSite").value;asia();try{localStorage.setItem("jobline-chat-site",$("chatSite").value)}catch(e){}};
     $("chatCopy").onclick=async()=>{try{await navigator.clipboard.writeText(cur());$("chatCopied").textContent="Copied. Paste it into your chat."}catch(e){$("chatPrompt").select();$("chatCopied").textContent="Press Ctrl+C to copy."}};
     $("chatUse").onclick=()=>{const t=cleanReply($("chatReply").value);if(!t){$("chatErr").textContent="Paste the chat’s reply first.";return}finish(resolve,{text:restoreText(t,o.restore),web:useWeb()})};
     $("chatCancel").onclick=()=>finish(reject,Object.assign(new Error("Cancelled."),{name:"AbortError"}));
