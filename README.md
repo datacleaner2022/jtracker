@@ -40,6 +40,11 @@ In **Settings**, **Drafting with**, pick **Free chat (copy and paste)**. For eac
 Job tracker tidies what ChatGPT's copy adds: block labels such as "Writing", escaped characters, citation marks and
 lines that ran together. Resume prompts ask ChatGPT for a code block, so every line break survives the copy.
 
+If a chat gets the tracker's layout wrong, attach
+[examples/Job_Search_Tracker_Example.xlsx](examples/Job_Search_Tracker_Example.xlsx) to it with the prompt (also under **Settings**,
+**Prompts**, **Download example tracker**). It has the exact columns, formulas, dropdowns and formats Job tracker
+reads, plus three made-up rows marked "EXAMPLE ROW" in Notes to delete once you have your own jobs.
+
 ## How it works
 
 - The site is a single static page (`index.html`). There is no server behind it: everything you add is kept

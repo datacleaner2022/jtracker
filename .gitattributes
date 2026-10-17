@@ -1,3 +1,6 @@
 # Unix line endings everywhere, so diffs only show real changes
 * text=auto eol=lf
 *.jpg binary
+*.xlsx binary
+*.docx binary
+*.pdf binary

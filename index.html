@@ -183,7 +183,24 @@ h1::before{content:"";width:22px;height:22px;border:1.5px solid var(--amber);bor
 @media (max-width:640px){.htour{grid-template-columns:1fr}}
 @media (max-width:860px){#tourBtn{font-size:0;gap:0}}
 .gsteps figure video{display:block;width:100%;height:auto;aspect-ratio:16/9;border-radius:12px;background:#0f1220}
-pre.exres{white-space:pre-wrap;word-break:break-word;margin:0;padding:14px 16px;max-height:60vh;overflow:auto;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2);color:var(--ink);font:13px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
+/* This edition's dialog keeps its title and its Close buttons on screen: only the part between them scrolls.
+   (display only while open, so a closed dialog stays hidden) */
+#slDlg[open]{display:flex;flex-direction:column;overflow:hidden}
+#slDlg h2,#slDlg>.row2{flex:none}
+#slDlg .sldbody{flex:1 1 auto;min-height:0;overflow:auto}
+/* an example resume's PDF, previewed in the dialog (fillExamples): the preview takes the height that's left */
+#slDlg.pdfview{width:min(880px,96vw);height:90vh}
+#slDlg.pdfview .sldbody{display:flex;flex-direction:column;overflow:hidden}
+#slDlg.pdfview .sldbody>.note{flex:none}
+/* a close button in the dialog's top corner */
+#slDlg h2{padding-right:40px}
+.dlgx{position:absolute;top:14px;right:14px;width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:50%;background:#d92d20;color:#fff;font-size:20px;line-height:1;cursor:pointer;z-index:2}
+.dlgx:hover{filter:brightness(1.15)}
+.dlgx:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+/* the ATS version of your resume on the Resume tab (makeAtsResume), looking like the Craft resume box */
+#rsAtsText{display:block;width:100%;min-height:420px;padding:9px 12px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2);color:var(--ink);line-height:1.6;resize:vertical}
+.exres-pdf{display:grid;gap:12px;align-content:start;width:100%;flex:1 1 auto;min-height:120px;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2)}
+.exres-pdf canvas{display:block;width:100%;height:auto;background:#fff;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .ats{margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-s);background:var(--panel2)}
 .ats .atshead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:8px}
 .ats .atshead span{color:var(--muted);font-size:13px}
@@ -2150,8 +2167,8 @@ button,.btn,.views button,.inuse-item,.slbar-toggle{-webkit-user-select:none;use
       <p class="note" style="margin:0" id="resNow"></p>
       <div class="row2"><button class="btn small" type="button" id="resPick">Upload a resume</button><span class="note" id="resOut"></span></div>
       <div id="resList" class="reslist"></div>
-      <input type="file" id="resFile" class="hidden" accept=".docx,.pdf,.txt,.md">
-      <p class="note" style="margin:0">Word (.docx) works best. A text-based PDF, .txt or .md also works. It’s saved in the resume folder, and your other files there are never replaced.</p>
+      <input type="file" id="resFile" class="hidden" accept=".docx,.pdf,.odt,.rtf,.txt,.md,.doc,.pages">
+      <p class="note" style="margin:0">Word (.docx) works best. A text-based PDF, .odt, .rtf, .txt or .md also works. It’s saved in the resume folder, and your other files there are never replaced.</p>
     </fieldset>
     <fieldset>
       <legend>Hidden companies</legend>
@@ -2203,7 +2220,8 @@ button,.btn,.views button,.inuse-item,.slbar-toggle{-webkit-user-select:none;use
       <fieldset>
         <legend>Prompts for free ChatGPT and Claude</legend>
         <p class="note" style="margin:0">Copy a prompt, paste it into a chat, and the chat creates or updates your tracker spreadsheet. Each prompt already contains your tracker’s exact layout and your search settings, so the file it makes works in Job tracker.</p>
-        <div class="row2"><a class="btn small" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a><a class="btn small" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><label class="inline"><input type="checkbox" id="pmResume" checked> Put my resume text in the prompts</label></div>
+        <div class="row2"><a class="btn small" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a><a class="btn small" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><a class="btn small" href="examples/Job_Search_Tracker_Example.xlsx" download title="A tracker in the exact layout Job tracker reads, with three made-up example rows. Attach it to the chat when it needs to see the format.">Download example tracker</a><label class="inline"><input type="checkbox" id="pmResume" checked> Put my resume text in the prompts</label></div>
+        <p class="note" style="margin:0">If a chat gets the tracker’s layout wrong, download the example tracker and attach it to the chat with the prompt. Its three example rows are marked EXAMPLE ROW in Notes, so you can delete them later.</p>
         <p class="note" id="pmPriv" style="margin:0"></p>
         <div id="promptList" class="plist"></div>
       </fieldset>
@@ -2259,6 +2277,17 @@ const daysBetweenISO = (a, b) => Math.round((isoToUTC(b) - isoToUTC(a)) / 864e5)
 const escRe = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const stamp = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
 const stampedName = (prefix = "Job_Search_Tracker") => `${prefix}_${stamp()}.xlsx`;
+/* The roles in Find jobs' Roles box: split at commas, semicolons, bars, new lines and " or " (not at "/" or "and",
+   which are inside titles like "C# / .NET Developer" and "Health and Safety Coordinator"). A search takes up to
+   MAX_ROLES of them, since a longer list makes a chat's reply too long to come back whole. */
+const MAX_ROLES = 2;
+const splitRoles = s => String(s || "").split(/[,;|\n]|\s+or\s+/i).map(r => r.trim()).filter(Boolean);
+/* A tracker's file name prefix from the roles searched: "teacher, tutor" gives Teacher_and_Tutor_Job_Tracker. */
+function trackerPrefix(roles) {
+  const parts = splitRoles(roles).slice(0, MAX_ROLES).map(r => safeName(r, 30).replace(/\+/g, "Plus")
+    .replace(/[^\p{L}\p{N} -]+/gu, " ").split(/[\s-]+/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join("_")).filter(Boolean);
+  return parts.length ? parts.join("_and_") + "_Job_Tracker" : "Job_Search_Tracker";
+}
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -2361,6 +2390,43 @@ const kv = {
   },
   async clear() { if (await idb()) await tx("readwrite", s => s.clear()); else MEM.clear(); }
 };
+
+/* ---------- the error log ----------
+"log" in storage holds the newest LOG_MAX problems: when, what was being done (the request, or "page" for an error in
+the page itself), the message and, for unexpected errors, where in the code. It never holds what was sent: requests
+carry resumes, pasted chat replies and keys, so only their kind, job id and text lengths are noted. Settings, Local
+files, Error log shows it and downloads it as a text file to send with a problem report. */
+const LOG_MAX = 300;
+let _logChain = Promise.resolve();
+function logProblem(where, err, detail) {
+  const e = { at: new Date().toISOString(), where: String(where || "").slice(0, 200), msg: String(err && err.message || err || "Unknown error").slice(0, 1000) };
+  if (err && err.code) e.code = err.code;
+  if (err && err.stack && !(err instanceof ApiError) && !(err instanceof AIError)) e.stack = String(err.stack).split("\n").slice(0, 8).join("\n");
+  if (detail && Object.keys(detail).length) e.detail = detail;
+  _logChain = _logChain.then(async () => {
+    const log = (await kv.get("log")) || [];
+    log.push(e);
+    await kv.set("log", log.slice(-LOG_MAX));
+  }).catch(() => {});
+  return _logChain;
+}
+/* What a request was about, without its contents: {kind: "search", text: "12345 chars", rows: "40 items"} */
+function requestShape(body) {
+  const out = {};
+  for (const [k, v] of Object.entries(body || {})) {
+    if (typeof v === "string") out[k] = ["kind", "id", "file", "what"].includes(k) ? v.slice(0, 80) : `${v.length} chars`;
+    else if (Array.isArray(v)) out[k] = `${v.length} items`;
+    else if (v && typeof v === "object") out[k] = "{…}";
+    else if (v != null) out[k] = String(v);
+  }
+  return out;
+}
+window.addEventListener("error", ev => {
+  if (ev.error || ev.message) logProblem("page", ev.error || ev.message, ev.filename ? { file: String(ev.filename).split("/").pop(), line: ev.lineno } : null);
+});
+window.addEventListener("unhandledrejection", ev => {
+  if (!(ev.reason && ev.reason.name === "AbortError")) logProblem("page", ev.reason);
+});
 
 /* Every change bumps a counter kept in storage: /api/version returns it, so the page reloads its data after a change made
    in another tab (its own changes it already knows about). */
@@ -2593,23 +2659,77 @@ function matchSkills(job, resumeText) {
 /* ---------- ATS: what applicant tracking systems need from a resume, and a check of a tailored one ----------
 An ATS turns the file into text, splits it into sections by their headings, pulls out contact details, jobs and dates,
 and ranks the resume by how many of the posting's keywords it finds, often as exact words. */
-function atsRules(job) {
+/* job null: the rules for a general ATS version, not tailored to a posting; target is the kind of role it's aimed at. */
+function atsRules(job, target = "") {
+  const headline = job ? `Begin the SUMMARY with a short headline that uses the posting's job title, "${job.role}", if the candidate's experience fits it.`
+    : target ? `Begin the SUMMARY with a short headline naming the kind of role the candidate wants, "${target}", if their experience fits it.`
+    : "Begin the SUMMARY with a short headline naming the candidate's current or most recent kind of role.";
   return `ATS rules (an applicant tracking system reads this resume before a person does):
 - One plain column of text: no tables, columns, text boxes, emojis, icons or special symbols. Bullets start with "- ".
 - Standard section headings only, in this order where they apply: SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION, CERTIFICATIONS. No creative headings.
 - Line 2 has the contact details as plain text: email, phone, city and province, and LinkedIn if the resume has them.
-- Begin the SUMMARY with a short headline that uses the posting's job title, "${job.role}", if the candidate's experience fits it. Never change a past job title.
-- Use the posting's exact words for skills, tools and qualifications the candidate really has (if the posting says "SQL Server" and the resume says "MSSQL", write "SQL Server"). Write an acronym out in full once, e.g. "Continuous Integration and Delivery (CI/CD)".
-- SKILLS: a few labelled lines of comma-separated keywords, e.g. "Languages: C#, Python, SQL", with what the posting asks for first.
-- Put the posting's key requirements in the experience bullets too, not only in SKILLS, wherever they are true.
+- ${headline} Never change a past job title.
+- ${job ? `Use the posting's exact words for skills, tools and qualifications the candidate really has (if the posting says "SQL Server" and the resume says "MSSQL", write "SQL Server").`
+    : `Use the standard, widely used names for skills and tools (write "SQL Server", not "MSSQL").`} Write an acronym out in full once, e.g. "Continuous Integration and Delivery (CI/CD)".
+- SKILLS: a few labelled lines of comma-separated keywords, e.g. "Languages: C#, Python, SQL", with ${job ? "what the posting asks for" : "the most important ones"} first.
+- ${job ? "Put the posting's key requirements in the experience bullets too" : "Name the main skills in the experience bullets too"}, not only in SKILLS, wherever they are true.
 - Write dates the same way everywhere, "Mon YYYY - Mon YYYY" or "Mon YYYY - Present", without changing them. If the resume gives only years, keep years.`;
+}
+/* An ATS version of the uploaded resume, from whatever layout it came in, for no job in particular. */
+function atsResumePrompt(resumeText, target = "", extra = "") {
+  return `Rewrite the candidate's resume below as an ATS-friendly resume: the same person and the same facts, in the layout applicant tracking systems read best. Return a complete, ready-to-use resume in plain text (no markdown symbols like # or **).
+
+The resume may come from any layout (two columns, tables, text boxes, icons, a design template), so its text can be out of order, split up or run together. Put every piece back where it belongs.
+
+Format exactly like this:
+- Line 1: the candidate's name.
+- Line 2: contact details on one line separated by " | ".
+- Then sections. Each section heading on its own line in CAPITALS.
+- For each job: a line "Title, Employer | Location | Dates", then bullets.
+- Bullets start with "- ".
+- Keep it to what fits on two pages.
+
+${atsRules(null, target)}
+
+Strict honesty rules:
+- Use ONLY facts in the candidate's resume. Never invent employers, titles, dates, numbers, degrees, certifications, tools, or skills.
+- You may reorder, regroup, trim, and reword.
+- Keep every employer and title exactly as given, and every date's month and year.
+
+How to improve it:
+- A summary of 3 lines at most.
+- Group the skills into labelled lines.
+- Tighten each bullet: a strong verb, what was done and the result. Keep every number as given.
+- Leave out what an ATS doesn't need: photos, graphics, skill bars, references, date of birth, marital status and a full street address (keep the city and province).
+
+After the resume, write a line containing exactly ${NOTES_MARK} and then up to 5 short lines starting with "- ": what you changed, anything in the original that was unclear or out of order, and anything the candidate should check. These notes are for the candidate only.
+
+CANDIDATE RESUME
+${resumeText}
+${extraBlock(extra)}`;
 }
 const ATS_HEADINGS = new Set(["summary", "professional summary", "profile", "career summary", "qualifications", "summary of qualifications",
   "skills", "technical skills", "core skills", "key skills", "core competencies", "areas of expertise",
   "experience", "work experience", "professional experience", "employment", "employment history", "relevant experience", "work history",
   "projects", "key projects", "education", "education and training", "education & training", "certifications", "certificates", "licenses and certifications",
   "training", "professional development", "volunteer experience", "volunteering", "awards", "publications", "languages", "interests", "references"]);
-const KW_LEAD = /^(?:(?:strong|solid|proven|hands-on|demonstrated|excellent|good|working|deep|some|basic|prior)\s+)?(?:experience|knowledge|understanding|proficiency|familiarity|expertise|skills?|background|exposure)\s+(?:with|in|of|using)\s+/i;
+/* A heading in any case made only of heading words, with at least one that names a section ("Work Experience &
+   Achievements", "Professional Highlights:", "Technical Proficiencies"); "Training Coordinator" isn't one. */
+const HEAD_CORE = new Set(["summary", "profile", "objective", "objectives", "experience", "experiences", "employment", "history", "skills", "skill",
+  "competencies", "expertise", "proficiencies", "strengths", "education", "training", "certifications", "certificates", "certification", "licenses",
+  "projects", "awards", "honours", "honors", "achievements", "accomplishments", "highlights", "qualifications", "languages", "interests",
+  "hobbies", "volunteer", "volunteering", "publications", "references", "courses", "coursework", "affiliations", "memberships",
+  "activities", "overview", "about"]);
+const HEAD_MORE = new Set(["professional", "work", "career", "relevant", "related", "technical", "core", "key", "selected", "other", "additional",
+  "academic", "personal", "areas", "of", "and", "&", "/", "me", "my", "community", "industry", "computer", "software", "research", "teaching",
+  "military", "notable", "recent", "previous", "development", "leadership", "tools", "technologies", "contact", "information", "details"]);
+function wordsHeading(l) {
+  const s = String(l).trim().replace(/:$/, "");
+  if (!s || s.length > 50 || /[\d.@|]/.test(s)) return false;
+  const words = s.toLowerCase().replace(/[,()]/g, " ").split(/\s+|(?=[&/])|(?<=[&/])/).filter(Boolean);
+  return words.length <= 6 && words.some(w => HEAD_CORE.has(w)) && words.every(w => HEAD_CORE.has(w) || HEAD_MORE.has(w));
+}
+const KW_LEAD =/^(?:(?:strong|solid|proven|hands-on|demonstrated|excellent|good|working|deep|some|basic|prior)\s+)?(?:experience|knowledge|understanding|proficiency|familiarity|expertise|skills?|background|exposure)\s+(?:with|in|of|using)\s+/i;
 const KW_STOP = new Set(["experience", "skills", "knowledge", "ability", "years", "year", "plus", "asset", "required", "preferred", "etc", "strong", "excellent", "good", "team", "work", "working", "equivalent", "related", "responsibilities"]);
 // the verbs and articles a chat's summary of a posting starts phrases with ("Requires a ...", "Emphasizes ...")
 const KW_VERB = /^(?:(?:requires?|emphasi[sz]es|includes?|prefers?|seeks?|needs?|wants?|values?|must have|nice to have|ideally|also|an?|the)\s+)+/i;
@@ -2659,7 +2779,7 @@ function atsCheck(text, job, original = "") {
   const jobs = blocks.filter(b => b.t === "job").length;
   add(jobs > 0, "Jobs it can read", jobs ? `${jobs} ${jobs === 1 ? "entry" : "entries"} as “Title, Employer | Location | Dates”.` : "No lines like “Title, Employer | Location | Dates”, so an ATS may not pick out your jobs and dates.");
   const norm = kwNorm(text), title = kwNorm(job.role || "");
-  add(!job.role || norm.includes(title), "The posting's job title", !job.role || norm.includes(title) ? `“${job.role}” appears, so a search for the title finds you.` : `“${job.role}” isn't in it. If it fits, put it in the summary's headline.`);
+  if (job.role) add(norm.includes(title), "The posting's job title", norm.includes(title) ? `“${job.role}” appears, so a search for the title finds you.` : `“${job.role}” isn't in it. If it fits, put it in the summary's headline.`);
   let keywords = null;
   const kws = postingKeywords(job), onorm = kwNorm(original);
   if (kws.length) {
@@ -3041,7 +3161,16 @@ function findUrl(value) {
 }
 /* A Python-style list, as the Python engine writes it into prompts: ['MES / Manufacturing', 'C# / .NET'] */
 const pyList = a => "[" + a.map(s => (String(s).includes("'") && !String(s).includes('"')) ? `"${s}"` : `'${String(s).replace(/'/g, "\\'")}'`).join(", ") + "]";
-function rowSpec(home, cats) {
+/* hasResume false: there's no resume to compare with, so fit, match and gaps are judged against the search instead. */
+function rowSpec(home, cats, hasResume = true) {
+  const judge = hasResume ? `"fit": "High", "Medium", "Stretch" or "Low" for this candidate,
+"requirements": the posting's key requirements in one or two sentences,
+"match": where the candidate's resume matches, specific to their experience,
+"gaps": what the posting asks for that the resume doesn't show, stated plainly,`
+    : `"fit": "High", "Medium", "Stretch" or "Low" for how well the posting matches the search (roles, location, work model, pay),
+"requirements": the posting's key requirements in one or two sentences,
+"match": how the posting fits the search, in a few words,
+"gaps": requirements that stand out and are hard to meet (years of experience, degrees, licences, certifications), or "None noted",`;
   return `Each object must have exactly these keys:
 "company": employer name ("Unnamed employer (Board name)" if the posting hides it),
 "role": job title as posted,
@@ -3050,10 +3179,7 @@ function rowSpec(home, cats) {
 "workModel": "On-site", "Hybrid", "Remote", "Contract" or "Not listed", with detail in brackets if given,
 "pay": pay exactly as listed, or "Not listed",
 "category": one of ${pyList(cats)}, or a short new category if none fit,
-"fit": "High", "Medium", "Stretch" or "Low" for this candidate,
-"requirements": the posting's key requirements in one or two sentences,
-"match": where the candidate's resume matches, specific to their experience,
-"gaps": what the posting asks for that the resume doesn't show, stated plainly,
+${judge}
 "source": ${LINK_RULE},
 "closes": the closing date or application deadline as YYYY-MM-DD if the posting shows one, otherwise "",
 "careers": the employer's own careers or jobs page, written out in full (https://...), only if you opened it and it loads, otherwise "". Never a search engine link,
@@ -3063,16 +3189,62 @@ function parseJson(text, want = "array") {
   const t = String(text).replace(/```(?:json)?/g, "");
   const [a, b] = want === "array" ? ["[", "]"] : ["{", "}"];
   const i = t.indexOf(a), j = t.lastIndexOf(b);
-  if (i < 0 || j <= i) throw new AIError("The model didn't return results in the expected format. Try again.");
-  try { return JSON.parse(t.slice(i, j + 1)); }
-  catch (e) { throw new AIError("The model's results couldn't be read. Try again, or ask for fewer results."); }
+  if (i >= 0 && j > i) { try { return JSON.parse(t.slice(i, j + 1)); } catch (e) {} }
+  // not one clean piece of JSON: read each {...} on its own (see jsonObjects)
+  const { objs, cut } = jsonObjects(t);
+  if (objs.length) {
+    if (want !== "array") return objs[0];
+    objs.cut = cut;
+    return objs;
+  }
+  if (i < 0 || j <= i) throw new AIError(cut ? "The reply was cut off before the first result ended. Ask for fewer results, or ask the chat to continue and paste both parts."
+    : "The model didn't return results in the expected format. Try again.");
+  throw new AIError("The model's results couldn't be read. Try again, or ask for fewer results.");
+}
+/* Every top-level {...} in a reply, each read on its own, for replies that aren't one clean piece of JSON: a long search
+   split into one list per role with headings between them, a reply cut off part way (cut: true, and the unfinished
+   last result is left out), a reply continued in a second message, or citation markers between results. Each object
+   gets small repairs first: chat citation marks out, line breaks inside strings as spaces, no trailing commas. */
+function jsonObjects(text) {
+  const t = String(text), objs = [];
+  let depth = 0, start = -1, inStr = false, esc = false;
+  for (let k = 0; k < t.length; k++) {
+    const ch = t[k];
+    if (inStr) {
+      if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"' && depth > 0) inStr = true;
+    else if (ch === "{") { if (depth++ === 0) start = k; }
+    else if (ch === "}" && depth > 0 && --depth === 0) {
+      const o = looseJson(t.slice(start, k + 1));
+      if (o && typeof o === "object" && !Array.isArray(o)) objs.push(o);
+    }
+  }
+  return { objs, cut: depth > 0 };
+}
+function looseJson(s) {
+  try { return JSON.parse(s); } catch (e) {}
+  let out = "", inStr = false, esc = false;
+  for (const ch of s.replace(CHAT_MARK, "")) {
+    if (inStr) {
+      if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false;
+      out += ch === "\n" || ch === "\r" || ch === "\t" ? " " : ch;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    out += ch;
+  }
+  out = out.replace(/,\s*([}\]])/g, "$1");
+  try { return JSON.parse(out); } catch (e) {}
+  try { return JSON.parse(out.replace(/[“”]/g, '"')); } catch (e) { return null; }
 }
 function cleanRow(r) {
   const out = {};
   for (const k of ROW_KEYS) {
     let v = r[k];
     if (k === "km") {
-      const n = v === "" || v == null || typeof v === "boolean" ? NaN : Number(String(v).trim());
+      const n = v === "" || v == null || typeof v === "boolean" ? NaN : Number(String(v).trim().replace(/^~?\s*(\d+(?:\.\d+)?)\s*(?:km|kilometres|kilometers)?\b.*$/i, "$1"));   // 12, "12", "~12 km"
       v = Number.isFinite(n) ? Math.round(n) : "";
     } else v = v == null ? "" : String(v).trim();
     out[k] = v;
@@ -3127,18 +3299,86 @@ Rules:
 ${blockedTxt}- Skip roles already in the candidate's tracker:
 ${trackedTxt}
 
-Then compare each posting with the candidate's resume.
+${resumeText ? "Then compare each posting with the candidate's resume." : "The candidate hasn't shared a resume, so judge each posting against the search above."}
 
-Return ONLY a JSON array (no other text, no code fences) of up to ${n} objects. ${rowSpec(home, cats)}
+Return ONLY a JSON array (no other text, no code fences) of up to ${n} objects, with the postings for every role in that one array. If the reply would get too long, return fewer postings rather than cutting one off part way. ${rowSpec(home, cats, !!resumeText)}${resumeText ? `
 
 CANDIDATE RESUME
-${resumeText}`;
+${resumeText}` : ""}`;
+}
+/* The names chats give the row keys when they don't use the ones asked for ("Company", "Job Title", "employer",
+   "salary_range"), compared without case, spaces or punctuation. */
+const KEY_ALIASES = {
+  company: ["company", "employer", "companyname", "employername", "organization", "organisation", "hiringcompany", "business"],
+  role: ["role", "title", "jobtitle", "position", "positiontitle", "roletitle", "job", "jobname", "rolename"],
+  location: ["location", "city", "joblocation", "where"],
+  km: ["km", "distance", "distancekm", "kmfromhome", "drivingdistance", "drivingdistancekm"],
+  workModel: ["workmodel", "worktype", "workarrangement", "arrangement", "worksetting", "remotehybrid", "remoteonsite", "model"],
+  pay: ["pay", "salary", "salaryrange", "payrange", "compensation", "wage", "rate"],
+  category: ["category", "type", "field"],
+  fit: ["fit", "fitpriority", "priority", "fitlevel", "fitrating"],
+  requirements: ["requirements", "keyrequirements", "qualifications", "whattheyaskfor", "requirementssummary"],
+  match: ["match", "matches", "resumematch", "whereyoumatch", "howyourresumematches", "fitreason", "why"],
+  gaps: ["gaps", "gap", "gapstoaddress", "missing"],
+  notes: ["notes", "note", "comments", "posted", "dateposted", "postingdate"],
+  closes: ["closes", "closingdate", "deadline", "applicationdeadline", "applyby"],
+  careers: ["careers", "careerspage", "careersurl", "companycareers"]
+};
+const normKey = k => String(k).toLowerCase().replace(/[^a-z]/g, "");
+KEY_ALIASES.source = SOURCE_KEYS.map(normKey).concat(["joblink", "postinglink", "applylink"]);
+const ALIAS_OF = Object.fromEntries(Object.entries(KEY_ALIASES).flatMap(([k, list]) => list.map(a => [a, k])));
+function aliasRow(o) {
+  const out = Object.assign({}, o);
+  for (const [k, v] of Object.entries(o)) {
+    const canon = ALIAS_OF[normKey(k)];
+    if (canon && (out[canon] == null || out[canon] === "")) out[canon] = v;
+  }
+  return out;
+}
+/* The job rows anywhere in what a chat sent: a list, a list inside {"jobs": [...]}, or lists grouped by role or
+   category ({"Data analyst": [...], "HR assistant": [...]}). */
+function collectRows(data, out = []) {
+  if (Array.isArray(data)) data.forEach(d => collectRows(d, out));
+  else if (data && typeof data === "object") {
+    const r = aliasRow(data);
+    if (r.company && r.role && typeof r.company !== "object" && typeof r.role !== "object") out.push(r);
+    else Object.values(data).forEach(v => { if (v && typeof v === "object") collectRows(v, out); });
+  }
+  return out;
+}
+/* A chat that wrote a markdown table instead of JSON: | Company | Role | ... | with a header row and a --- row. */
+function tableRows(text) {
+  const rows = [], lines = String(text).split(/\r?\n/);
+  const cells = l => l.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+  for (let i = 0; i + 1 < lines.length; i++) {
+    if (!/^\s*\|.*\|/.test(lines[i]) || !/^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) continue;
+    const head = cells(lines[i]).map(h => { const n = normKey(h.replace(/\*+/g, "")); return ALIAS_OF[n] || n; });
+    let k = i + 2;
+    for (; k < lines.length && /^\s*\|/.test(lines[k]); k++) {
+      const vals = cells(lines[k]), o = {};
+      head.forEach((h, j) => {
+        let v = (vals[j] || "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/<br\s*\/?>/gi, " ");
+        const link = /\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/.exec(v);
+        if (link) v = h === "source" || h === "careers" ? link[2] : v.replace(link[0], link[1]);
+        if (h) o[h] = v.trim();
+      });
+      if (o.company && o.role) rows.push(o);
+    }
+    i = k - 1;
+  }
+  return rows;
 }
 function rowsFromText(text, n = MAX_RESULTS) {
-  const data = parseJson(text, "array");
-  const rows = (Array.isArray(data) ? data : []).filter(r => r && typeof r === "object" && r.company && r.role).map(cleanRow);
+  let data = null, err = null;
+  try { data = parseJson(text, "array"); } catch (e) { err = e; }
+  let found = collectRows(data);
+  if (!found.length) found = tableRows(text);
+  if (!found.length && err) throw err;
+  const rows = found.map(cleanRow);
   linksFromText(rows, text);
-  return rows.slice(0, n);
+  const out = rows.slice(0, n);
+  out.cut = !!(data && data.cut);
+  return out;
 }
 /* Some chats list their sources under the JSON instead of in it. Give a row with no link the one address that sits on a
    line naming its company (and, when several do, its role too). */
@@ -3156,22 +3396,23 @@ function linksFromText(rows, text) {
   }
 }
 function parsePrompt(posting, url, resumeText, home, cats) {
-  return `Turn this job posting into one row of the candidate's job tracker, and compare it with their resume.
-Use only what the posting says. If something isn't stated, write "Not listed". Don't invent details.
+  return `Turn this job posting into one row of the candidate's job tracker${resumeText ? ", and compare it with their resume" : ""}.
+Use only what the posting says. If something isn't stated, write "Not listed". Don't invent details.${resumeText ? "" : `
+The candidate hasn't shared a resume: for "fit" and "match", judge the posting on its own (location, work model, pay).`}
 
-Return ONLY a JSON object (no other text, no code fences). ${rowSpec(home, cats)}
+Return ONLY a JSON object (no other text, no code fences). ${rowSpec(home, cats, !!resumeText)}
 If the posting's URL is given below, use it as "source".
 
 POSTING URL: ${url || "not given"}
 POSTING
-${posting.slice(0, 12000)}
+${posting.slice(0, 12000)}${resumeText ? `
 
 CANDIDATE RESUME
-${resumeText}`;
+${resumeText}` : ""}`;
 }
 function rowFromText(text, url = "") {
-  const d = parseJson(text, "object");
-  const row = cleanRow(d && typeof d === "object" ? d : {});
+  const d = parseJson(text, "object"), found = collectRows(d);
+  const row = cleanRow(found[0] || (d && typeof d === "object" ? aliasRow(d) : {}));
   if (url && !row.source) row.source = url;
   if (!row.company || !row.role) throw new AIError("Couldn't find a company and job title in that text. Paste the full posting.");
   return row;
@@ -4079,8 +4320,8 @@ async function xStandardValidations(bytes, last) {
 Resumes: "resumes" holds [{file, kb, mtime, text, style}] (the text read from the file, and for Word files the font, size and
 margins, so drafts can match them). The file itself isn't kept.
 Saved documents: "file:<folder>/<name>" holds {rel, name, folder, type, blob, at}, the browser's stand-in for applications/. */
-const RESUME_EXT = [".docx", ".pdf", ".txt", ".md"];
-const RANK = { ".docx": 0, ".pdf": 1, ".md": 2, ".txt": 3 };
+const RESUME_EXT = [".docx", ".pdf", ".odt", ".rtf", ".txt", ".md"];
+const RANK = { ".docx": 0, ".pdf": 1, ".odt": 2, ".rtf": 3, ".md": 4, ".txt": 5 };
 const extOf = f => { const m = /\.[^.]+$/.exec(f || ""); return m ? m[0].toLowerCase() : ""; };
 async function resumeList() { return (await kv.get("resumes")) || []; }
 const listResumes = rs => rs.slice().sort((a, b) => b.mtime - a.mtime).map(r => ({ file: r.file, kb: r.kb, mtime: Math.floor(r.mtime / 1000) }));
@@ -4090,12 +4331,12 @@ function findResume(rs, preferred) {
 }
 async function readResume(preferred) {
   const r = findResume(await resumeList(), preferred);
-  if (!r) throw new ApiError("No resume yet. Upload it in Settings (Word, PDF, .txt or .md).");
+  if (!r) throw new ApiError("No resume yet. Upload it in Settings (Word, PDF, .odt, .rtf, .txt or .md).");
   return r;
 }
 async function resumeInfo() {
   const s = await settings(), r = findResume(await resumeList(), s.resume_file);
-  if (!r) return { ok: false, error: "No resume yet. Upload it in Settings (Word works best; a text-based PDF, .txt or .md also works)." };
+  if (!r) return { ok: false, error: "No resume yet. Upload it in Settings (Word works best; a text-based PDF, .odt, .rtf, .txt or .md also works)." };
   const lines = r.text.split(/\r\n|[\n\r\v\f\x1c-\x1e\x85\u2028\u2029]/).map(l => l.trim()).filter(Boolean).slice(1);   // the first line is the name
   return { ok: true, file: r.file, chars: r.text.length, words: r.text.split(/\s+/).filter(Boolean).length,
     sections: [...new Set(lines.filter(l => RESUME_HEADING.test(l)))], skills: skillsIn(r.text), text: r.text };
@@ -4118,33 +4359,72 @@ async function resumeCity() {
 // a resume section heading: a short line in capitals (SUMMARY, WORK EXPERIENCE, EDUCATION & TRAINING), or a standard
 // heading in any case ("Experience", "Technical Skills:"), as Word resumes often have them
 const RESUME_CAPS = /^[A-Z][A-Z &\/,'()-]{2,40}$/;
-const RESUME_HEADING = { test: l => RESUME_CAPS.test(l) || ATS_HEADINGS.has(String(l).trim().toLowerCase().replace(/\s+/g, " ").replace(/:$/, "")) };
+const RESUME_HEADING = { test: l => RESUME_CAPS.test(l) || ATS_HEADINGS.has(String(l).trim().toLowerCase().replace(/\s+/g, " ").replace(/:$/, "")) || wordsHeading(l) };
 
 const W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 const wq = (el, tag) => [...el.getElementsByTagNameNS(W_NS, tag)];
 const wAttr = (el, name) => el ? el.getAttributeNS(W_NS, name) || el.getAttribute("w:" + name) : null;
+/* The lines of a Word part in reading order. Templates wrap paragraphs in content controls (w:sdt) and other wrappers,
+   so every element is walked into; a table row becomes "cell | cell" (or, for a table that lays out the page, each
+   cell's lines in turn); a text box's paragraphs become lines of their own
+   (its mc:Fallback copy is skipped so nothing comes twice); tabs and line breaks inside a paragraph are kept; a list
+   paragraph (Word's own bullets, which aren't in the text) starts with "- ". */
+function docxLines(root, out = []) {
+  const para = p => {
+    let s = "";
+    const boxes = [];
+    (function walk(n) {
+      for (const c of n.children) {
+        const k = c.localName;
+        if (k === "Fallback" || k === "delText" || k === "instrText" || k === "pPr" || k === "rPr") continue;
+        if (k === "t") s += c.textContent;
+        else if (k === "tab" || k === "ptab") s += "\t";
+        else if (k === "br" || k === "cr") s += "\n";
+        else if (k === "noBreakHyphen") s += "-";
+        else if (k === "txbxContent") boxes.push(c);
+        else walk(c);
+      }
+    })(p);
+    const list = [...p.children].some(c => c.localName === "pPr" && [...c.children].some(x => x.localName === "numPr"));
+    if (s.trim() || !boxes.length) s.split("\n").forEach((l, i) => out.push(list && i === 0 && l.trim() && !/^\s*[-•*]/.test(l) ? "- " + l.trim() : l));
+    boxes.forEach(walkBlock);
+  };
+  const cellLines = tc => docxLines(tc).map(l => l.trim()).filter(Boolean);
+  function walkBlock(n) {
+    for (const c of n.children) {
+      const k = c.localName;
+      if (k === "p") para(c);
+      else if (k === "tbl") {
+        for (const tr of [...c.children].filter(x => x.localName === "tr")) {
+          const cells = [...tr.children].filter(x => x.localName === "tc").map(cellLines).filter(l => l.length);
+          // a row of short cells is data ("Title | Employer | Dates"); a cell with several paragraphs means the table
+          // lays out the page (a design template's sidebar and main column), so each cell's lines come in order
+          if (cells.some(l => l.length > 2)) cells.forEach(l => out.push(...l, ""));
+          else if (cells.length) out.push(cells.map(l => l.join(" ")).join(" | "));
+        }
+      }
+      else if (k !== "sectPr" && k !== "Fallback") walkBlock(c);
+    }
+  }
+  walkBlock(root);
+  return out;
+}
 /* The text of a Word file (headers first, where contact details often live; tables as "cell | cell"), plus its look. */
 async function readDocx(bytes) {
-  const Z = await lib("JSZip"), zip = await Z.loadAsync(bytes);
+  const Z = await lib("JSZip");
+  let zip;
+  try { zip = await Z.loadAsync(bytes); }
+  catch (e) { throw new ApiError("That file isn't a Word .docx file inside (it may be an old .doc renamed). Open it in Word and use Save As, Word Document (.docx), or save it as a PDF."); }
   const xml = async n => { const f = zip.file(n); return f ? new DOMParser().parseFromString(await f.async("string"), "application/xml") : null; };
-  const t = n => wq(n, "t").map(x => x.textContent).join("");
   const parts = [];
   for (const name of Object.keys(zip.files).filter(n => /^word\/header\d*\.xml$/.test(n)).sort()) {
     const h = await xml(name);
-    if (h) for (const p of wq(h, "p")) { const s = t(p); if (s.trim()) parts.push(s); }
+    if (h && h.documentElement) parts.push(...docxLines(h.documentElement).filter(s => s.trim()));
   }
   const doc = await xml("word/document.xml");
   if (!doc) throw new ApiError("That Word file has no document in it.");
   const body = wq(doc, "body")[0];
-  for (const child of body ? [...body.children] : []) {
-    if (child.localName === "p") parts.push(t(child));
-    else if (child.localName === "tbl") {
-      for (const tr of wq(child, "tr")) {
-        const cells = wq(tr, "tc").map(tc => wq(tc, "p").map(t).join(" ").trim()).filter(Boolean);
-        if (cells.length) parts.push(cells.join(" | "));
-      }
-    }
-  }
+  if (body) parts.push(...docxLines(body));
   // the look: the Normal style's font and size (else the first run that has them), and the first section's page and margins
   const style = { font: "", size: 0, page: null };
   const styles = await xml("word/styles.xml");
@@ -4178,22 +4458,125 @@ async function pdfWorker(P) {
 async function readPdf(bytes) {
   const P = await lib("pdfjsLib");
   await pdfWorker(P);
-  const pdf = await P.getDocument({ data: new Uint8Array(bytes) }).promise, pages = [];
+  let pdf;
+  try { pdf = await P.getDocument({ data: new Uint8Array(bytes) }).promise; }
+  catch (e) {
+    if (e && e.name === "PasswordException") throw new ApiError("That PDF is password-protected. Save a copy without a password, or upload the Word file.");
+    throw new ApiError("That PDF couldn't be opened (it may be damaged). Try saving it again, or upload the Word file.");
+  }
+  const pages = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const tc = await (await pdf.getPage(i)).getTextContent(), lines = [];
-    let line = "", lastY = null;
+    let line = "", lastY = null, lastEnd = null;
     for (const it of tc.items) {
       if (!("str" in it)) continue;
-      const y = Math.round(it.transform[5]);
-      if (lastY !== null && Math.abs(y - lastY) > 2) { lines.push(line); line = ""; }
+      const x = it.transform[4], y = Math.round(it.transform[5]), h = Math.abs(it.transform[3]) || 10;
+      if (lastY !== null && Math.abs(y - lastY) > 2) { lines.push(line); line = ""; lastEnd = null; }
+      // some PDFs place each word on its own with no space between them: add one where there's a gap, and a bar
+      // where there's a wide one (a date pushed to the right margin, a second column)
+      if (lastEnd !== null && it.str.trim() && line.trim()) {
+        const gap = x - lastEnd;
+        if (gap > h * 2.5) line = line.replace(/\s+$/, "") + " | ";
+        else if (gap > h * 0.15 && !/\s$/.test(line) && !/^\s/.test(it.str)) line += " ";
+      }
       line += it.str;
       lastY = y;
-      if (it.hasEOL) { lines.push(line); line = ""; lastY = null; }
+      if (it.str.trim()) lastEnd = x + (it.width || 0);
+      if (it.hasEOL) { lines.push(line); line = ""; lastY = null; lastEnd = null; }
     }
     if (line) lines.push(line);
     pages.push(lines.join("\n"));
   }
   return pages.join("\n");
+}
+/* A text file in whatever encoding it was saved in: UTF-8, UTF-16 (Notepad's "Unicode"), or Windows-1252 (older Windows). */
+function decodeText(bytes) {
+  const b = new Uint8Array(bytes);
+  if (b[0] === 0xFF && b[1] === 0xFE) return new TextDecoder("utf-16le").decode(b);
+  if (b[0] === 0xFE && b[1] === 0xFF) return new TextDecoder("utf-16be").decode(b);
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(b); }
+  catch (e) { return new TextDecoder("windows-1252").decode(b); }
+}
+/* The text of an OpenDocument file (LibreOffice, Google Docs' .odt download): paragraphs, headings and list items. */
+async function readOdt(bytes) {
+  const Z = await lib("JSZip");
+  let zip;
+  try { zip = await Z.loadAsync(bytes); } catch (e) { throw new ApiError("That .odt file couldn't be opened. Save it again as Word (.docx) or PDF."); }
+  const f = zip.file("content.xml");
+  if (!f) throw new ApiError("That .odt file has no document in it.");
+  const doc = new DOMParser().parseFromString(await f.async("string"), "application/xml"), out = [];
+  const inline = n => [...n.childNodes].map(c => c.nodeType === 3 ? c.nodeValue : c.localName === "tab" ? "\t" : c.localName === "line-break" ? "\n"
+    : c.localName === "s" ? " ".repeat(+c.getAttribute("text:c") || 1) : c.localName === "note" ? "" : inline(c)).join("");
+  (function walk(n, inList) {
+    for (const c of n.children) {
+      const k = c.localName;
+      if (k === "p" || k === "h") out.push(...inline(c).split("\n").map((l, i) => inList && i === 0 && l.trim() ? "- " + l.trim() : l));
+      else if (k === "table-row") out.push([...c.children].filter(x => x.localName === "table-cell").map(x => inline(x).trim()).filter(Boolean).join(" | "));
+      else walk(c, inList || k === "list");
+    }
+  })(doc.documentElement, false);
+  return out.join("\n");
+}
+/* The text of an .rtf file: control words dropped, \par and \line as new lines, \tab as a tab, \'xx and \uN as characters,
+   and the groups that hold no text (fonts, colours, styles, pictures, document info) skipped. */
+function readRtf(bytes) {
+  const src = new TextDecoder("windows-1252").decode(new Uint8Array(bytes));
+  if (!src.startsWith("{\\rtf")) throw new ApiError("That .rtf file isn't in RTF format inside. Save it again as Word (.docx) or PDF.");
+  const SKIP = /^(fonttbl|colortbl|stylesheet|info|pict|object|header|footer|headerl|headerr|footerl|footerr|listtable|listoverridetable|themedata|colorschememapping|datastore|latentstyles|rsidtbl|generator|xmlnstbl|mmathPr|fldinst)$/;
+  let out = "", i = 0, uc = 1, skipDepth = 0, depth = 0;
+  const stack = [];
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === "{") { stack.push(uc); depth++; i++; if (src[i] === "\\" && src[i + 1] === "*") { if (!skipDepth) skipDepth = depth; } continue; }
+    if (ch === "}") { uc = stack.pop() || 1; if (skipDepth === depth) skipDepth = 0; depth--; i++; continue; }
+    if (ch === "\\") {
+      const m = /^\\([a-z]+)(-?\d+)? ?|^\\'([0-9a-f]{2})|^\\(.)/i.exec(src.slice(i, i + 40));
+      if (!m) { i++; continue; }
+      i += m[0].length;
+      if (skipDepth) continue;
+      if (m[3]) { out += new TextDecoder("windows-1252").decode(new Uint8Array([parseInt(m[3], 16)])); continue; }
+      if (m[4]) { if ("\\{}".includes(m[4])) out += m[4]; else if (m[4] === "~") out += " "; else if (m[4] === "_") out += "-"; continue; }
+      const w = m[1], n = m[2];
+      if (SKIP.test(w)) { skipDepth = depth; continue; }
+      if (w === "par" || w === "line" || w === "row") out += "\n";
+      else if (w === "tab" || w === "cell") out += w === "cell" ? " | " : "\t";
+      else if (w === "uc") uc = +n;
+      else if (w === "u") {                        // then skip its stand-in for older readers: uc characters, where \'xx is one
+        out += String.fromCharCode(+n < 0 ? +n + 65536 : +n);
+        for (let k = 0; k < uc && i < src.length && src[i] !== "{" && src[i] !== "}"; k++) i += /^\\'[0-9a-f]{2}/i.test(src.slice(i, i + 4)) ? 4 : 1;
+      }
+      else if (w === "bullet") out += "•";
+      else if (w === "emdash" || w === "endash") out += "-";
+      else if (w === "lquote" || w === "rquote") out += "'";
+      else if (w === "ldblquote" || w === "rdblquote") out += '"';
+      continue;
+    }
+    if (!skipDepth && ch !== "\r" && ch !== "\n") out += ch;
+    i++;
+  }
+  return out.replace(/ \| \n/g, "\n");
+}
+/* Every reader's text, made alike: bullet symbols of any kind as "- ", tabs inside a line as " | " (a title and its
+   dates set apart with a tab), no tabs at the start of a line, invisible characters and odd spaces gone. */
+const chars = (...codes) => String.fromCharCode(...codes);
+// bullet glyphs, including the Wingdings and Symbol ones Word leaves in pasted or PDF text (private-use codes)
+const BULLETS = chars(0x2022, 0x25CF, 0x25CB, 0x25E6, 0x25AA, 0x25AB, 0x25A0, 0x25A1, 0x25C6, 0x25C7, 0x2756, 0x27A2, 0x27A4, 0x25BA, 0x25B6,
+  0x2023, 0x2043, 0x2219, 0x00B7, 0x2713, 0x2714, 0x2717, 0x2610, 0x2794, 0x2192, 0xF0A7, 0xF0B7, 0xF076, 0xF0D8, 0xF0FC);
+const LINE_BREAKS = new RegExp(`[${chars(0x0B, 0x0C, 0x85, 0x2028, 0x2029)}]`, "g");
+const ODD_SPACES = new RegExp(`[${chars(0xA0, 0x2000)}-${chars(0x200A, 0x202F, 0x205F, 0x3000)}]`, "g");
+const INVISIBLE = new RegExp(`[${chars(0x200B)}-${chars(0x200D, 0x2060, 0xFEFF, 0xAD)}]`, "g");
+const DASH_BULLET = new RegExp(`^[-${chars(0x2013, 0x2014)}*o]\\s+(?=\\S)`);
+const BULLET_LINE = new RegExp(`^[${BULLETS}]\\s*`);
+function tidyResume(text) {
+  return String(text)
+    .replace(/\r\n?/g, "\n").replace(LINE_BREAKS, "\n")
+    .replace(ODD_SPACES, " ").replace(INVISIBLE, "")
+    .split("\n").map(l => l
+      .replace(/^[ \t]+/, "")
+      .replace(BULLET_LINE, "- ").replace(DASH_BULLET, "- ")
+      .replace(/:[ \t]*\t[ \t]*/g, ": ").replace(/[ \t]*\t[ \t]*/g, " | ").replace(/(?: \| ){2,}/g, " | ").replace(/^ \| | \| $/g, "")
+      .replace(/ {2,}/g, " ").trimEnd())
+    .join("\n");
 }
 async function resumeText(name, bytes) {
   const ext = extOf(name);
@@ -4201,12 +4584,14 @@ async function resumeText(name, bytes) {
   try {
     if (ext === ".docx") ({ text, style } = await readDocx(bytes));
     else if (ext === ".pdf") text = await readPdf(bytes);
-    else text = new TextDecoder("utf-8").decode(bytes);
+    else if (ext === ".odt") text = await readOdt(bytes);
+    else if (ext === ".rtf") text = readRtf(bytes);
+    else text = decodeText(bytes);
   } catch (e) {
-    if (e instanceof ApiError && e.code === 503) throw e;
+    if (e instanceof ApiError) throw e;
     throw new ApiError(`Couldn't read ${name}: ${e && e.message || e}`);
   }
-  text = text.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  text = tidyResume(text).replace(/\n{3,}/g, "\n\n").trim();
   if (text.length < 200) throw new ApiError(`Only found ${text.length} characters of text in ${name}. If it's a scanned PDF, save your resume as Word instead.`);
   return { text, style };
 }
@@ -4221,18 +4606,20 @@ function uniqueName(have, name) {                 // documents._unique: "Name v2
 /* ---------- building Word files and PDFs (documents.build_resume, build_letter, build_pdf) ---------- */
 const docRuns = s => String(s).split(/\*\*(.+?)\*\*/).map((t, i) => ({ text: t.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"), bold: i % 2 === 1 })).filter(r => r.text);
 const titleCase = s => s.toLowerCase().replace(/(^|[^a-z'])([a-z])/g, (m, a, c) => a + c.toUpperCase());
-const isHeading = s => { const letters = s.replace(/[^A-Za-z]/g, ""); return s.length >= 2 && s.length <= 45 && letters.length > 0 && letters === letters.toUpperCase() && !s.startsWith("- "); };
+const isHeading = s => { const letters = s.replace(/[^A-Za-z]/g, ""); return (s.length >= 2 && s.length <= 45 && letters.length > 0 && letters === letters.toUpperCase() && !s.startsWith("- ")) || wordsHeading(s); };
+const BULLET_RX = new RegExp(`^(?:[-*]\\s+|[${BULLETS}]\\s*)`, "u");
 function resumeBlocks(text) {
   const lines = String(text).replace(/\r/g, "").split("\n").map(l => l.trimEnd().replace(/^#+\s*/, ""));
   const out = []; let i = 0;
   while (i < lines.length && !lines[i].trim()) i++;
   if (i < lines.length) { out.push({ t: "name", s: lines[i].trim().replace(/^\*+|\*+$/g, "") }); i++; }
+  while (i < lines.length && !lines[i].trim()) i++;
   if (i < lines.length && /[|@]/.test(lines[i])) { out.push({ t: "contact", s: lines[i].trim() }); i++; }
   for (; i < lines.length; i++) {
     const s = lines[i].trim();
     if (!s) continue;
     if (isHeading(s)) out.push({ t: "h", s: s.length > 3 ? titleCase(s) : s });
-    else if (/^[-•*]\s+/.test(s)) out.push({ t: "li", s: s.replace(/^[-•*]\s+/, "") });
+    else if (BULLET_RX.test(s)) out.push({ t: "li", s: s.replace(BULLET_RX, "") });
     else if (s.includes("|") && /(19|20)\d{2}|present/i.test(s)) { const b = s.split("|").map(x => x.trim()); out.push({ t: "job", a: b[0], b: b.slice(1).join("  |  ") }); }
     else out.push({ t: "p", s });
   }
@@ -4489,7 +4876,7 @@ const STATIC_GUIDE = [
   { id: "resume", title: "Add your resume",
     intro: "Everything Job tracker writes for you is built from your own resume. It never invents experience you don't have.",
     steps: [
-      { text: "Open the **Resume** tab and click **Add resume**, or use **Upload resume** in the first step on Home. A Word file (.docx) works best; a text-based PDF, .txt or .md also works. Home then greets you by your first name." },
+      { text: "Open the **Resume** tab and click **Add resume**, or use **Upload resume** in the first step on Home. A Word file (.docx) works best; a text-based PDF, .odt, .rtf, .txt or .md also works. Home then greets you by your first name." },
       { text: "The card at the top shows the resume in use, with its words, sections and the skills Job tracker recognises. Your original file is never changed.", img: "st-10-resume.jpg", caption: "The Resume tab: the resume in use, the folder, your custom resumes and cover letters." },
       { text: "**Example ATS resumes** (a software developer, a software engineering manager, an HR associate and an administrative assistant) show the layout applicant tracking systems read well. **View** shows one with the posting it was written for; **PDF** and **Word** download it. They're there before you add your own resume, too." },
       { text: "Have more than one resume? Add each one, then pick from the **Resume** dropdown. **Automatic** uses a Word file first, then the newest. You can still choose a different resume on a single job." },
@@ -4583,6 +4970,11 @@ async function promptResume(jid, forChat) {
   const r = await resumeFor(jid);
   if (forChat || isManual(await settings())) { const red = redact(r.text, r.file); return [red.text, red.restore]; }
   return [r.text, {}];
+}
+/* The same, for finding jobs, which works without a resume: ["", {}] when there isn't one. */
+async function optionalResume(forChat) {
+  if (!(await resumeList()).length) return ["", {}];
+  return promptResume(null, forChat);
 }
 async function catsAndTracked() {
   try {
@@ -4843,7 +5235,7 @@ async function apiTrackerImport(req) {
 async function apiTrackerAdd(req) {
   const rows = (req.body.rows || []).filter(r => r && typeof r === "object");
   if (!rows.length) throw new ApiError("Pick at least one result to add.");
-  if (!(await trackerExists())) await createTracker();   // the first search makes the job tracker file
+  if (!(await trackerExists())) await createTracker(splitRoles(req.body.roles).length ? stampedName(trackerPrefix(req.body.roles)) : "");   // the first search makes the job tracker file, named for its roles
   return appendRows(rows);
 }
 async function apiSearchExport(req) {
@@ -4861,7 +5253,7 @@ async function apiSearchTrackerFile(req) {
     const base = current ? await kv.get("tbytes:" + current.file) : await standardTrackerBytes();
     const { added, skipped, bytes } = await xAppendRows(base, rows);
     if (current && !added.length) return { file: "", rows: 0, skipped: skipped.length, inUse: current.file };
-    const file = uniqueTrackerName(ts, stampedName());
+    const file = uniqueTrackerName(ts, stampedName(trackerPrefix(req.body.roles)));
     await putTracker(file, bytes, { dirty: true, linked: false });
     const s = await settings();
     if (s.tracker_file) await saveSettings(Object.assign(clone(s), { tracker_file: file }));
@@ -4923,14 +5315,14 @@ function promptLibrary(home, criteria, cats, tracked, blocklist, resumeText) {
   const resumeHead = resume.startsWith("NOTE:") ? "MY RESUME (personal details are replaced with placeholders on purpose)" : "MY RESUME";
   const trackedTxt = tracked.slice(0, 80).map(([c, r]) => `- ${c}: ${r}`).join("\n") || "- none yet";
   const spec2 = rowSpec(home, cats);
-  const attach = "Attach your tracker file (Job_Search_Tracker.xlsx) to the chat: click the paperclip or the + button. To get the file Job tracker is using, press Download tracker in Settings, Local files.";
+  const attach = "Attach your tracker file (Job_Search_Tracker.xlsx) to the chat: click the paperclip or the + button. To get the file Job tracker is using, press Download tracker in Settings, Local files. No tracker yet? Attach the example tracker (Download example tracker, above) and delete its example rows afterwards.";
   const save = "Download the file the chat gives you, then open it in Job tracker: Settings, Local files, Open a tracker file. Job tracker switches to it.";
   const keep = "Keep a copy of your old tracker first. Job tracker keeps backups when it makes changes itself, but a file a chat hands back is a new file.";
   const create = `You are helping me set up a job-search tracker. Create a brand-new, empty Excel workbook (.xlsx) for me to download.
 
 ${spec}
 
-Do not add any sample rows. If you can run code, use Python with openpyxl, build the file, and give it to me as a download. Check that column P holds the formula, that column A is formatted as a date, that the dropdowns work, and that the file opens without errors.
+Do not add any sample rows. If I attached an example tracker (Job_Search_Tracker_Example.xlsx), copy its layout, formats, formulas and dropdowns exactly, but leave out its example rows. If you can run code, use Python with openpyxl, build the file, and give it to me as a download. Check that column P holds the formula, that column A is formatted as a date, that the dropdowns work, and that the file opens without errors.
 
 If you can't create files in this chat, say so in one line. Then give me (1) a complete Python script using openpyxl that creates this file when I run it, and (2) the header row as tab-separated text I can paste into Excel.`;
   const findUpdate = `You are my job-search assistant. I have attached my job tracker (an Excel file). Search the web for current job postings that match the search below, and add the new ones to my tracker as new rows. Then give me the updated workbook to download.
@@ -5018,7 +5410,7 @@ ${spec}`;
     { id: "create", title: "Create a new tracker", file: true,
       when: "You don't have a tracker yet and want an Excel file in the exact layout Job tracker reads.",
       before: ["Easiest: Job tracker can create it for you (Settings, Local files, Create a new tracker). Use this prompt only if you'd rather have the chat build it.",
-        "Open a new chat in ChatGPT or Claude and paste the prompt.", save], prompt: create },
+        "Open a new chat in ChatGPT or Claude and paste the prompt.", "Optional: press Download example tracker above and attach it too, so the chat can copy the exact layout.", save], prompt: create },
     { id: "find_update", title: "Find jobs and add them to my tracker (Excel file)", file: true,
       when: "You want the chat to search the web and hand you back your tracker with new rows added.",
       before: [attach, "Turn on the chat's web search if it has a switch for it.", "Paste the prompt and send it.", keep, save], prompt: findUpdate },
@@ -5063,15 +5455,17 @@ async function apiSearchState(req) {
 async function apiSearchParse(req) {
   const text = String(req.body.text || "").trim(), url = String(req.body.url || "").trim();
   if (text.length < 80) throw new ApiError("Paste the full posting text (at least a few sentences).");
-  const s = await settings(), r = await readResume(s.resume_file), [cats] = await catsAndTracked();
-  const reply = await generate(s, parsePrompt(text, url, r.text, s.home_city, cats), req.signal);
+  const s = await settings(), [rt] = await optionalResume(false), [cats] = await catsAndTracked();
+  const reply = await generate(s, parsePrompt(text, url, rt, s.home_city, cats), req.signal);
   return { row: (await enrichRows([rowFromText(reply, url)]))[0] };
 }
 
 /* ---------- resumes ---------- */
 async function apiResumeUpload(req) {
   const b = req.body, base = String(b.name || "").replace(/\\/g, "/").split("/").pop(), ext = extOf(base);
-  if (!RESUME_EXT.includes(ext)) throw new ApiError("Use a Word (.docx), PDF, .txt or .md file.");
+  if (ext === ".doc") throw new ApiError("That's an older Word file (.doc). Open it in Word and use Save As, Word Document (.docx), then upload that.");
+  if (ext === ".pages") throw new ApiError("Pages files can't be read here. In Pages, use File, Export To, Word (or PDF), then upload that.");
+  if (!RESUME_EXT.includes(ext)) throw new ApiError("Use a Word (.docx), PDF, OpenDocument (.odt), .rtf, .txt or .md file.");
   let bytes;
   try { bytes = b64ToBytes(String(b.data || "")); } catch (e) { throw new ApiError("That file couldn't be read. Try choosing it again."); }
   if (!bytes.length || bytes.length > 8 * 1024 * 1024) throw new ApiError("Choose a resume file under 8 MB.");
@@ -5098,15 +5492,59 @@ async function apiResumeSelect(req) {
   return { ok: true, resume: await resumeInfo() };
 }
 
+/* An ATS version of the resume in use (Resume tab, Make an ATS version): mode "prompt" gives the prompt for a chat website
+   (personal details as placeholders, restored in the page), "write" has the local model write it, "check" runs the ATS
+   check on it, and "save" makes its Word file and PDF (in the look of the original) and adds it to your resumes, where
+   it can be picked for drafting. It's aimed at the roles in Find jobs when there are some. */
+async function apiResumeAts(req) {
+  const b = req.body, mode = b.mode, s = await settings(), source = await readResume(s.resume_file);
+  const crit = ((await kv.get("search")) || {}).criteria || {}, target = splitRoles(crit.roles).slice(0, MAX_ROLES).join(" or ");
+  if (mode === "prompt") {
+    const red = redact(source.text, source.file);
+    return { prompt: atsResumePrompt(red.text, target, s.about_me_extra) + CHAT_CODE_BLOCK, restore: red.restore };
+  }
+  if (mode === "write") {
+    if (!isConfigured(s) || isManual(s)) throw new ApiError("Writing with a model isn't set up. Open Settings and choose a local model, or use free chat.", 428);
+    return { text: await generate(s, atsResumePrompt(source.text, target, s.about_me_extra), req.signal) };
+  }
+  const text = String(b.text || "").trim();
+  if (!text) throw new ApiError("There's no ATS version to " + (mode === "save" ? "save" : "check") + " yet.");
+  const check = atsCheck(text, { role: "" }, source.text);
+  if (mode === "check") return check;
+  if (mode !== "save") throw new ApiError("Unknown request.");
+  await folderReady(true);   // first, while the Save press still counts
+  const base = `${safeName(source.file.replace(/\.[^.]+$/, ""), 50)} - ATS`, folder = "ATS resume";
+  const have = new Set((await filesIn(folder)).map(f => f.name.toLowerCase()));
+  let stem = base, i = 1;
+  while (have.has((stem + ".docx").toLowerCase()) || have.has((stem + ".pdf").toLowerCase())) { i++; stem = `${base} v${i}`; }
+  const who = (resumeBlocks(text)[0] || {}).s || "", meta = { kind: "resume", role: "ATS version", from: source.file };
+  const info = { title: stem, author: who, subject: "Resume" + (target ? ": " + target : ""), keywords: skillsIn(text).join(", ") };
+  const docx = await buildDocx("resume", text, source.style, info), pdf = await buildPdf("resume", text, source.style, stem, info);
+  const relD = await putFile(folder, stem + ".docx", docx, DOCX_MIME, meta), relP = await putFile(folder, stem + ".pdf", pdf, "application/pdf", meta);
+  // one of your resumes too, so drafts can start from it; the one in use stays the same until you pick this one (with
+  // Automatic, the newest Word file would win, so the one in use is picked for you first)
+  const rs = await resumeList(), file = uniqueName(new Set(rs.map(r => r.file.toLowerCase())), stem + ".docx");
+  rs.push({ file, kb: Math.max(1, Math.round(docx.size / 1024)), mtime: Date.now(), text, style: source.style || null });
+  await kv.set("resumes", rs);
+  if (!s.resume_file) await saveSettings(Object.assign(clone(s), { resume_file: source.file }));
+  await bump();
+  return { file, docx: fileInfo(relD, docx), pdf: fileInfo(relP, pdf), check, resumes: listResumes(rs) };
+}
+
 /* The Find jobs prompt and its restore map. forChat hides personal details from a chat website. */
 async function searchPromptFor(criteria, forChat) {
-  const s = await settings(), [text, restore] = await promptResume(null, forChat), [cats, tracked] = await catsAndTracked();
+  const s = await settings(), [text, restore] = await optionalResume(forChat), [cats, tracked] = await catsAndTracked();
   // where to search: the Near field when it's filled, else the city on the resume, else the home city setting; the
   // same place is where the candidate is "based" and what distances are measured from. Empty roles: what fits the resume.
-  // (Only the values change; the prompt's words stay the same as ai.search_prompt.)
+  // No resume: the search runs on the criteria alone, so it needs roles to look for.
   const c = Object.assign({}, criteria || {}), near = String(c.location || "").trim(), where = near || (await resumeCity()) || s.home_city;
   c.location = where;
-  if (!String(c.roles || "").trim()) c.roles = "roles that fit the candidate's resume";
+  if (splitRoles(c.roles).length > MAX_ROLES)
+    throw new ApiError(`Search for up to ${MAX_ROLES} roles at a time, for example "teacher, tutor". With more, the chat's reply gets too long to come back whole. Run another search for the rest.`);
+  if (!String(c.roles || "").trim()) {
+    if (!text) throw new ApiError("Fill in Roles or keywords first. Without a resume, Job tracker needs to know what to look for.");
+    c.roles = "roles that fit the candidate's resume";
+  }
   return [searchPrompt(c, text, where, cats, tracked, s.blocklist || []), restore];
 }
 
@@ -5199,7 +5637,7 @@ async function apiPrompt(req) {
   if (kind === "parse") {
     const text = String(b.text || "").trim();
     if (text.length < 80) throw new ApiError("Paste the full posting text (at least a few sentences).");
-    const [rt, restore] = await promptResume(null, false), [cats] = await catsAndTracked();
+    const [rt, restore] = await optionalResume(false), [cats] = await catsAndTracked();
     return out({ prompt: parsePrompt(text, String(b.url || "").trim(), rt, home, cats) }, restore);
   }
   throw new ApiError("Unknown kind of prompt.");
@@ -5224,7 +5662,17 @@ async function apiImport(req) {
     }
     if (kind === "salary") { await jobById(b.id || ""); return await storeSalary(b.id, salaryFromText(text, !!b.web)); }
     if (kind === "kit") return { kit: splitKit(text) };
-    if (kind === "search") { const [rows, hidden] = await filterBlocked(rowsFromText(text, searchCount(b.criteria))); return { rows: await enrichRows(rows), hidden }; }
+    if (kind === "search") {                       // every result the chat found, even past the count asked for (a search for several roles can give more)
+      const unread = "Job tracker couldn't find any jobs in that reply. Copy the whole reply with the chat's copy button and paste it again. If the chat wrote a list or paragraphs, ask it: \"Send those results again as the JSON array I asked for.\"";
+      let all;
+      try { all = rowsFromText(text, MAX_RESULTS); }
+      catch (e) { if (e instanceof AIError && !/cut off/.test(e.message)) throw new ApiError(unread, 422); throw e; }
+      const [rows, hidden] = await filterBlocked(all);
+      if (!rows.length && !hidden && all.cut) throw new ApiError("The chat's reply was cut off before the first result ended. Ask for fewer results, or ask the chat to continue and paste both parts together.", 422);
+      if (!all.length && !/^\s*\[\s*\]\s*$/.test(text.replace(/```(?:json)?/g, ""))) throw new ApiError(unread, 422);   // jobs that couldn't be read, not an empty search
+      if (all.cut) logProblem("POST /api/import", "Warning: the chat's reply was cut off, so its last result was left out.", { kind: "search", text: `${text.length} chars`, rows: `${all.length} read` });
+      return { rows: await enrichRows(rows), hidden, cut: all.cut };
+    }
     if (kind === "parse") return { row: (await enrichRows([rowFromText(text, String(b.url || "").trim())]))[0] };
   } catch (e) { if (e instanceof AIError) throw new ApiError(e.message, 422); throw e; }
   throw new ApiError("Unknown kind of reply.");
@@ -5291,7 +5739,7 @@ const ROUTES = {
   "/api/search/state": apiSearchState, "/api/search": notHere("Searching the web with an API key"), "/api/search/local": apiSearchLocal, "/api/search/parse": apiSearchParse,
   "/api/tracker/add": apiTrackerAdd, "/api/search/export": apiSearchExport, "/api/search/tracker-file": apiSearchTrackerFile,
   "/api/guide": apiGuide, "/api/guide.pdf": async () => { printGuide(); return { ok: true }; },
-  "/api/resume/upload": apiResumeUpload, "/api/resume/select": apiResumeSelect, "/api/prompt": apiPrompt, "/api/import": apiImport,
+  "/api/resume/upload": apiResumeUpload, "/api/resume/select": apiResumeSelect, "/api/resume/ats": apiResumeAts, "/api/prompt": apiPrompt, "/api/import": apiImport,
   "/api/settings": apiSettings, "/api/browsers": async () => ({ browsers: [{ key: "default", name: "This browser" }], current: "default" }),
   "/api/browser/test": async () => ({ opened: "this browser" }), "/api/test-ai": apiTestAi
 };
@@ -5308,6 +5756,7 @@ async function handle(url, init) {
     return out instanceof Response ? out : jsonRes(out);
   } catch (e) {
     if (e && e.name === "AbortError") throw e;
+    logProblem(`${method} ${u.pathname}`, e, requestShape(body));
     if (e instanceof ApiError) return jsonRes({ error: e.message }, e.code);
     if (e instanceof AIError) return jsonRes({ error: e.message }, 502);
     console.error("Job tracker:", e);
@@ -5337,6 +5786,7 @@ const kb = n => Math.max(1, Math.round(n / 1024)) + " KB";
 
 function dialog(title, html, bind) {
   const d = $("slDlg");
+  d.classList.remove("pdfview");                   // the example resume preview's layout is its own
   d.querySelector("h2").textContent = title;
   const body = d.querySelector(".sldbody");
   body.innerHTML = html;
@@ -5571,13 +6021,40 @@ async function eraseAll() {
   location.reload();
 }
 
+/* The error log in Settings, Local files: the newest LOG_SHOWN entries, newest first. */
+const LOG_SHOWN = 15;
+const logTime = iso => { const d = new Date(iso); return `${isoLocal(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };   // this computer's time
+const logLine = e => `${logTime(e.at)}  ${e.where}${e.code ? ` (${e.code})` : ""}: ${e.msg}`;
+async function renderLog() {
+  const el = $("slLogList");
+  if (!el) return;
+  await _logChain;
+  const log = (await kv.get("log")) || [];
+  $("slLogDl").disabled = $("slLogClear").disabled = !log.length;
+  if (!log.length) { el.innerHTML = `<p class="note" style="margin:0">No errors logged.</p>`; return; }
+  const shown = log.slice(-LOG_SHOWN).reverse();
+  el.innerHTML = `<p class="note" style="margin:0">${log.length} ${log.length === 1 ? "entry" : "entries"}${log.length > LOG_SHOWN ? `, the newest ${LOG_SHOWN} shown` : ""}.</p>
+    <ul style="list-style:none;margin:0;padding:8px 10px;max-height:220px;overflow:auto;border:1px solid var(--line, #8884);border-radius:8px;font:12px/1.45 ui-monospace,Consolas,monospace">${shown.map(e =>
+      `<li style="padding:3px 0;border-bottom:1px solid var(--line, #8882);overflow-wrap:anywhere">${esc(logLine(e))}</li>`).join("")}</ul>`;
+}
+/* The whole log as a text file, with what helps to read it: the time, the browser and where the page runs. */
+async function downloadLog() {
+  await _logChain;
+  const log = (await kv.get("log")) || [];
+  const head = [`Job tracker error log, downloaded ${new Date().toISOString()}`, `Page: ${location.origin}${location.pathname}`, `Browser: ${navigator.userAgent}`, `Entries: ${log.length}`].join("\n");
+  const body = log.slice().reverse().map(e => [logLine(e),
+    e.detail ? "  request: " + Object.entries(e.detail).map(([k, v]) => `${k}=${v}`).join(", ") : "",
+    e.stack ? e.stack.split("\n").map(l => "  " + l.trim()).join("\n") : ""].filter(Boolean).join("\n"));
+  downloadBlob(new Blob([[head].concat(body).join("\n\n")], { type: "text/plain" }), `Job_tracker_error_log_${stamp()}.txt`);
+}
+
 /* ---------- start: add this edition's pieces to the shared page ---------- */
 function setupPage() {
   try { if (localStorage.getItem("jobline-find-engine") !== "api") localStorage.setItem("jobline-find-engine", "chat"); } catch (e) {}   // Find jobs: no Automatic finder here (AI search falls back to prompts by itself when there's no plugin)
-  document.body.insertAdjacentHTML("beforeend", `<dialog id="slDlg" aria-labelledby="slDlgTitle"><h2 id="slDlgTitle"></h2><div class="sldbody"></div>
+  document.body.insertAdjacentHTML("beforeend", `<dialog id="slDlg" aria-labelledby="slDlgTitle"><button class="dlgx" type="button" id="slDlgX" aria-label="Close" title="Close">×</button><h2 id="slDlgTitle"></h2><div class="sldbody"></div>
     <div class="row2 end" style="margin-top:16px"><button class="btn" type="button" id="slDlgClose">Close</button></div></dialog>
     <input type="file" id="slTrkFile" class="hidden" accept=".xlsx"><input type="file" id="slRestoreFile" class="hidden" accept=".json,application/json">`);
-  $("slDlgClose").onclick = () => $("slDlg").close();
+  $("slDlgClose").onclick = $("slDlgX").onclick = () => $("slDlg").close();
   document.querySelectorAll("a[data-setup]").forEach(a => { a.href = SETUP_URL; });
   $("slTrkFile").onchange = () => { const f = $("slTrkFile").files[0]; $("slTrkFile").value = ""; if (f) importPicked(f); };
   $("slRestoreFile").onchange = () => { const f = $("slRestoreFile").files[0]; $("slRestoreFile").value = ""; if (f) restoreAll(f); };
@@ -5601,6 +6078,16 @@ function setupPage() {
     $("slBackup").onclick = () => backupAll().catch(e => note(e.message));
     $("slRestore").onclick = () => $("slRestoreFile").click();
     $("slErase").onclick = () => eraseAll().catch(e => note(e.message));
+  }
+  if (files) {
+    files.insertAdjacentHTML("beforeend", `<fieldset id="slLog"><legend>Error log</legend>
+      <p class="note" style="margin:0">When something goes wrong, Job tracker notes it here: when, what you were doing and the error. If you report a problem, download the log and attach it. It never includes your resume, pasted replies or keys.</p>
+      <div id="slLogList"></div>
+      <div class="row2"><button class="btn small" type="button" id="slLogDl">Download log</button><button class="btn small ghost" type="button" id="slLogClear">Clear log</button></div></fieldset>`);
+    $("slLogDl").onclick = () => downloadLog().catch(e => note(e.message));
+    $("slLogClear").onclick = async () => { await _logChain; await kv.del("log"); renderLog(); note("Error log cleared."); };
+    const tab = document.querySelector('.settab[data-stab="files"]');
+    if (tab) tab.addEventListener("click", () => renderLog());
   }
   const local = document.querySelector('.pv[data-p="local"]');
   if (local) local.insertAdjacentHTML("beforeend", `<p class="note">Your model must let this site talk to it. Ollama: set OLLAMA_ORIGINS to ${esc(location.origin)} and restart Ollama. LM Studio: switch on Enable CORS in its server settings. When the browser asks to let this site reach devices on your local network, click Allow. <a href="${SETUP_URL}" target="_blank" rel="noopener">The setup steps</a> have the details.</p>`);
@@ -5801,8 +6288,11 @@ function buildResumeTop(root) {
   tools.insertAdjacentHTML("beforeend", `<button class="btn" type="button" data-act="upload-resume">${PLUS}Add resume</button>`);
   head.appendChild(tools);
   const old = top.querySelector(".row2");
-  if (old) { const folder = old.querySelector("#rsFolder"); if (folder) tools.insertBefore(folder, tools.lastChild); old.remove(); }
-  const docs = [["resume", "Custom resumes", "Resumes tailored to a job posting appear here once you save them. Open a job in Applications and use Craft resume."],
+  if (old) {
+    for (const id of ["#rsAts", "#rsFolder"]) { const b = old.querySelector(id); if (b) tools.insertBefore(b, tools.lastChild); }
+    old.remove();
+  }
+  const docs = [["resume", "Custom resumes", "Resumes tailored to a job posting, and ATS versions of your resume, appear here once you save them. Open a job in Applications and use Craft resume, or use Make an ATS version above."],
     ["letter", "Cover letters", "Cover letters appear here once you save them. Open a job in Applications and write one from the Cover letter section."]]
     .map(([kind, title, empty]) => {
       const box = document.createElement("section");
@@ -5970,8 +6460,8 @@ async function searchForm(root) {
   const roles = root.querySelector("#sRoles"), loc = root.querySelector("#sLoc");
   if (!roles || !loc || roles.dataset.ph) return;
   roles.dataset.ph = "1";
-  const city = await resumeCity();
-  roles.placeholder = "e.g. HR assistant, data analyst (leave empty for roles that fit your resume)";
+  const city = await resumeCity(), hasResume = (await resumeList()).length > 0;
+  roles.placeholder = hasResume ? "e.g. HR assistant, data analyst (leave empty for roles that fit your resume)" : "e.g. HR assistant, data analyst";
   loc.placeholder = city ? `${city} (resume)` : "e.g. Toronto, ON";
   loc.title = "Leave empty to search near the city on your resume";
   let cleared = false;
@@ -6182,186 +6672,81 @@ function fillDocs(box, list, empty) {
 }
 
 /* ---------- example ATS resumes (made-up people, example.com addresses, 555 numbers) ----------
-Shown on the Resume tab: what a resume an ATS reads well looks like, in the same layout Craft resume makes. Each one has the
-posting it was written for, so its ATS check can be shown too. */
+Shown on the Resume tab: what a resume an ATS reads well looks like, in the same layout Craft resume makes. The files are
+in examples/resumes/, a PDF and a Word file each, made with buildPdf and buildDocx. "check" is each one's ATS check against
+the posting it was written for, worked out when the files were made. */
+const EXAMPLES_DIR = "examples/resumes/";
 const EXAMPLE_RESUMES = [
-  { id: "dev", title: "Software Developer", about: "Three to five years of experience, building web services in C# and .NET.",
+  { id: "dev", title: "Software Developer", person: "Daniel Okafor", about: "Three to five years of experience, building web services in C# and .NET.",
     job: { role: "Software Developer", requirements: "3+ years C#, .NET; SQL Server; REST APIs; Azure; Git; unit testing; Agile; Docker" },
-    text: `Daniel Okafor
-daniel.okafor@example.com | 519-555-0142 | Kitchener, ON | linkedin.com/in/daniel-okafor-example
-
-SUMMARY
-Software Developer with five years of experience building and maintaining web applications and REST APIs in C# and .NET. Works across the stack with SQL Server, Azure and Docker, writes unit tests as part of every change, and has shipped in Agile teams of four to ten developers. Known for clear code reviews and for turning vague requests into small, testable pieces of work.
-
-SKILLS
-Languages: C#, JavaScript, TypeScript, SQL
-Frameworks: .NET 8, ASP.NET Core, Entity Framework Core, React
-Databases: SQL Server, PostgreSQL, Redis
-Cloud and DevOps: Azure App Service, Azure Functions, Docker, Continuous Integration and Delivery (CI/CD), Azure DevOps, Git
-Testing: unit testing with xUnit and NUnit, integration testing, test-driven development (TDD)
-Ways of working: Agile, Scrum, code review, technical documentation
-
-EXPERIENCE
-Software Developer, Northfield Logistics | Waterloo, ON | Mar 2022 - Present
-- Built and maintain 14 REST APIs in C# and ASP.NET Core that handle 2 million shipment updates a day
-- Moved three services from virtual machines to Docker containers on Azure, cutting deployment time from 40 minutes to 6
-- Raised unit test coverage of the billing service from 35% to 82% with xUnit, and added the tests to the CI/CD pipeline
-- Tuned slow SQL Server queries and indexes, bringing the main tracking page from 4.2 seconds to under 1 second
-- Mentor two junior developers and lead the team's weekly code review session
-
-Junior Software Developer, Brightline Health | Guelph, ON | Jun 2019 - Feb 2022
-- Developed features for a patient booking web application in .NET and React used by 60 clinics
-- Wrote stored procedures and Entity Framework Core migrations for SQL Server
-- Built an Azure Functions job that sends appointment reminders, reducing missed visits by 18%
-- Took part in two-week Agile sprints, estimating stories and demonstrating work to clinic staff
-
-PROJECTS
-Open-source contributor, Fluent validation library | Remote | Jan 2021 - Present
-- Added and documented two validators used by more than 3,000 projects
-
-EDUCATION
-Bachelor of Computer Science, University of Guelph | Guelph, ON | 2019
-
-CERTIFICATIONS
-Microsoft Certified: Azure Developer Associate (AZ-204) | 2023` },
-
-  { id: "mgr", title: "Software Engineering Manager", about: "Leads several teams: people management, hiring, delivery and architecture.",
+    file: "Example_ATS_Resume_Software_Developer", check: { passed: 9, total: 9, pct: 100 } },
+  { id: "mgr", title: "Software Engineering Manager", person: "Maria Delgado", about: "Leads several teams: people management, hiring, delivery and architecture.",
     job: { role: "Software Engineering Manager", requirements: "people management; hiring; Agile; Scrum; Jira; CI/CD; AWS; microservices; roadmap planning; stakeholder management" },
-    text: `Maria Delgado
-maria.delgado@example.com | 416-555-0187 | Toronto, ON | linkedin.com/in/maria-delgado-example
-
-SUMMARY
-Software Engineering Manager with 12 years in software, the last five leading teams of 6 to 22 engineers. Combines people management and hiring with hands-on knowledge of AWS, microservices and Continuous Integration and Delivery (CI/CD). Runs roadmap planning with product and sales, and keeps stakeholders informed with plain, regular updates. Builds teams that ship often and keep their people.
-
-SKILLS
-Leadership: people management, hiring and interviewing, coaching, performance reviews, career development
-Delivery: Agile, Scrum, Kanban, Jira, roadmap planning, OKRs, budgeting
-Stakeholder management: executive reporting, product partnership, vendor management
-Technical: AWS, microservices, CI/CD, Java, Python, PostgreSQL, Kubernetes, Docker
-Practices: incident management, architecture review, engineering metrics
-
-EXPERIENCE
-Software Engineering Manager, Polaris Payments | Toronto, ON | Apr 2021 - Present
-- Lead three teams and 22 engineers who build the payments platform on AWS microservices
-- Hired 11 engineers in two years, writing the interview loop and training 15 interviewers
-- Introduced Scrum and quarterly roadmap planning with product, raising on-time delivery from 58% to 87%
-- Cut production incidents by 45% by adding CI/CD quality gates, on-call reviews and service ownership
-- Report progress, risks and budget to the VP of Engineering and finance stakeholders every month
-- Kept voluntary attrition under 5% a year through clear career paths and regular one-on-ones
-
-Engineering Team Lead, Polaris Payments | Toronto, ON | Jan 2019 - Mar 2021
-- Led a team of six engineers that split a monolith into eight Java microservices
-- Ran Agile ceremonies in Jira and coached two engineers into senior roles
-- Worked with stakeholders in sales and support to set priorities for a new merchant dashboard
-
-Senior Software Engineer, Maplewave Software | Waterloo, ON | Jun 2013 - Dec 2018
-- Designed and built PostgreSQL-backed services in Java and Python for a SaaS product with 400 business clients
-- Set up the company's first CI/CD pipeline and moved deployment from monthly to daily
-
-EDUCATION
-Bachelor of Applied Science, Computer Engineering, University of Waterloo | Waterloo, ON | 2013
-
-CERTIFICATIONS
-Certified ScrumMaster (CSM), Scrum Alliance | 2019
-AWS Certified Solutions Architect - Associate | 2022` },
-
-  { id: "hr", title: "HR Associate", about: "Early-career human resources: recruitment, onboarding and HRIS records.",
+    file: "Example_ATS_Resume_Software_Engineering_Manager", check: { passed: 9, total: 9, pct: 100 } },
+  { id: "hr", title: "HR Associate", person: "Aisha Thompson", about: "Early-career human resources: recruitment, onboarding and HRIS records.",
     job: { role: "HR Associate", requirements: "recruitment coordination; onboarding; HRIS; employee records; Workday; Microsoft Excel; employment standards; confidentiality" },
-    text: `Aisha Thompson
-aisha.thompson@example.com | 905-555-0119 | Hamilton, ON | linkedin.com/in/aisha-thompson-example
-
-SUMMARY
-HR Associate with three years of experience in recruitment coordination, onboarding and HRIS administration for organizations of 300 to 900 employees. Keeps employee records accurate in Workday, builds reports in Microsoft Excel, and applies Ontario employment standards with care. Trusted with confidential information and known for a friendly, organized approach with candidates and staff.
-
-SKILLS
-Human resources: recruitment coordination, onboarding, offboarding, employee records, benefits enrolment
-Systems: Workday HRIS, ADP, Microsoft Excel (pivot tables, XLOOKUP), Microsoft Outlook, Teams
-Compliance: Ontario Employment Standards Act, confidentiality, privacy, health and safety training records
-Communication: candidate experience, employee questions, policy documentation
-
-EXPERIENCE
-HR Associate, Greenway Foods | Hamilton, ON | Feb 2023 - Present
-- Coordinate recruitment for 40 to 60 hourly and salaried roles a year, scheduling interviews and preparing offer letters
-- Run onboarding for new hires, from paperwork and Workday setup to first-day orientation, for an average of 12 hires a month
-- Maintain employee records in the HRIS and audit them each quarter, reducing data errors by 30%
-- Build monthly headcount and turnover reports in Microsoft Excel for the HR manager
-- Answer employee questions about benefits, leaves and employment standards, keeping every case confidential
-- Process offboarding for leavers, including exit interviews, final pay forms and system access removal, within two business days
-
-Human Resources Assistant, Lakeshore Community Services | Burlington, ON | Jun 2021 - Jan 2023
-- Supported recruitment coordination for 25 program roles, posting jobs and screening applications
-- Scanned and organized 1,200 paper employee records into the new HRIS within four months
-- Tracked health and safety training and reminded staff before certifications expired
-- Prepared onboarding packages and booked orientation sessions for new staff and volunteers
-
-EDUCATION
-Human Resources Management Diploma, Mohawk College | Hamilton, ON | 2021
-
-CERTIFICATIONS
-Certified Human Resources Professional (CHRP) candidate, Human Resources Professionals Association | 2024` },
-
-  { id: "admin", title: "Administrative Assistant", about: "Office administration: calendars, travel, records and bookkeeping support.",
+    file: "Example_ATS_Resume_HR_Associate", check: { passed: 9, total: 9, pct: 100 } },
+  { id: "admin", title: "Administrative Assistant", person: "Jordan Lee", about: "Office administration: calendars, travel, records and bookkeeping support.",
     job: { role: "Administrative Assistant", requirements: "calendar management; travel arrangements; Microsoft Office; Excel; data entry; customer service; bookkeeping; QuickBooks" },
-    text: `Jordan Lee
-jordan.lee@example.com | 226-555-0163 | London, ON | linkedin.com/in/jordan-lee-example
-
-SUMMARY
-Administrative Assistant with six years of experience supporting busy offices and senior managers. Handles calendar management, travel arrangements, data entry and front-desk customer service, and supports bookkeeping in QuickBooks. Skilled in Microsoft Office, especially Excel, Word and Outlook. Calm under pressure, careful with details, and good at keeping a team organized.
-
-SKILLS
-Office administration: calendar management, travel arrangements, meeting minutes, filing systems, office supplies
-Software: Microsoft Office (Excel, Word, Outlook, PowerPoint), QuickBooks Online, Google Workspace, Zoom
-Finance support: bookkeeping, invoicing, expense reports, accounts payable
-Data: data entry, record keeping, reports in Excel
-Customer service: reception, phone and email support, handling complaints politely
-
-EXPERIENCE
-Administrative Assistant, Riverbend Engineering | London, ON | Aug 2021 - Present
-- Manage calendars for three directors, booking about 40 meetings a week across time zones
-- Plan travel arrangements for 25 staff, keeping trips within policy and saving 12% on annual travel costs
-- Enter and reconcile invoices and expenses in QuickBooks Online and prepare month-end bookkeeping files
-- Built an Excel tracker for project documents that cut the time to find a file from minutes to seconds
-- Greet visitors and answer the main phone line, providing friendly customer service to clients and suppliers
-- Take and send out minutes for the weekly management meeting, and follow up on action items with each owner
-
-Office Administrator, Fairview Dental Clinic | St. Thomas, ON | May 2018 - Jul 2021
-- Booked and confirmed 60 patient appointments a day and kept the schedule full
-- Completed data entry for patient records and insurance claims with a 99% accuracy rate
-- Ordered office and clinical supplies and tracked spending in Excel
-- Trained two new receptionists on the phone system, booking software and office procedures
-
-EDUCATION
-Office Administration Diploma, Fanshawe College | London, ON | 2018
-
-CERTIFICATIONS
-Microsoft Office Specialist: Excel Associate | 2022` }
+    file: "Example_ATS_Resume_Administrative_Assistant", check: { passed: 9, total: 9, pct: 100 } }
 ];
-/* The Resume tab's panel of examples: open the PDF, download the Word file, or read the text and its ATS check. */
+/* The Resume tab's panel of examples: a preview of the PDF, and the PDF and Word files to download. */
 function fillExamples(box) {
-  const stem = e => `Example ATS Resume - ${e.title} - ${(resumeBlocks(e.text)[0] || {}).s || ""}`;
-  const info = e => ({ title: stem(e), author: (resumeBlocks(e.text)[0] || {}).s || "", subject: "Resume: " + e.job.role, keywords: (atsCheck(e.text, e.job).keywords || { found: [] }).found.join(", ") });
-  const make = (e, f) => f === "pdf" ? buildPdf("resume", e.text, null, stem(e), info(e)) : buildDocx("resume", e.text, null, info(e));
+  const url = (e, ext) => EXAMPLES_DIR + e.file + "." + ext;
+  const saveAs = (e, ext) => `Example ATS Resume - ${e.title} - ${e.person}.${ext}`;
+  const checkText = c => `ATS check: ${c.passed} of ${c.total}${c.pct != null ? `, ${c.pct}% of keywords` : ""}`;
   box.innerHTML = `<h3>Example ATS resumes <span class="rscount">${EXAMPLE_RESUMES.length}</span></h3>
     <p class="note" style="margin:0 0 10px">Made-up people, laid out the way Craft resume lays yours out: one column, standard headings and the posting's keywords. Each passes the ATS check for the posting it was written for.</p>
-    <ul class="rsdlist">` + EXAMPLE_RESUMES.map((e, i) => { const c = atsCheck(e.text, e.job);
-      return `<li><div class="rsdname"><b>${esc(e.title)}</b><span>${esc(e.about)} ATS check: ${c.passed} of ${c.total}${c.keywords ? `, ${c.keywords.pct}% of keywords` : ""}.</span></div>`
-        + `<div class="rsdbtn"><button class="btn small" type="button" data-i="${i}" data-f="view">View</button><button class="btn small" type="button" data-i="${i}" data-f="pdf">PDF</button><button class="btn small" type="button" data-i="${i}" data-f="docx">Word</button></div></li>`; }).join("") + `</ul>`;
-  box.querySelectorAll("[data-f]").forEach(b => b.onclick = async () => {
-    const e = EXAMPLE_RESUMES[+b.dataset.i], f = b.dataset.f;
-    if (f === "view") {
-      const c = atsCheck(e.text, e.job);
-      $("slDlgTitle").textContent = "Example: " + e.title;
-      box.ownerDocument.querySelector("#slDlg .sldbody").innerHTML = `<p class="note" style="margin:0 0 8px">Written for a posting titled “${esc(e.job.role)}” that asks for: ${esc(e.job.requirements.replace(/;/g, ","))}. ATS check: ${c.passed} of ${c.total} passed.</p>`
-        + `<pre class="exres">${esc(e.text)}</pre>`;
-      $("slDlg").showModal();
-      return;
-    }
-    const w = f === "pdf" ? window.open("", "_blank") : null;   // opened now, while the click still counts, and filled when the PDF is ready
-    try {
-      const blob = await make(e, f), name = stem(e) + (f === "pdf" ? ".pdf" : ".docx");
-      if (w) w.location.href = URL.createObjectURL(blob); else downloadBlob(blob, name);
-    } catch (err) { if (w) w.close(); note(err.message || "Couldn't make that file."); }
+    <ul class="rsdlist">` + EXAMPLE_RESUMES.map((e, i) =>
+      `<li><div class="rsdname"><b>${esc(e.title)}</b><span>${esc(e.about)} ${checkText(e.check)}.</span></div>`
+      + `<div class="rsdbtn"><button class="btn small" type="button" data-i="${i}" data-f="view">Preview</button>`
+      + `<a class="btn small" href="${url(e, "pdf")}" download="${esc(saveAs(e, "pdf"))}">PDF</a>`
+      + `<a class="btn small" href="${url(e, "docx")}" download="${esc(saveAs(e, "docx"))}">Word</a></div></li>`).join("") + `</ul>`;
+  box.querySelectorAll('[data-f="view"]').forEach(b => b.onclick = () => {
+    const e = EXAMPLE_RESUMES[+b.dataset.i], dlg = $("slDlg");
+    $("slDlgTitle").textContent = "Example: " + e.title;
+    dlg.querySelector(".sldbody").innerHTML = `<p class="note" style="margin:0 0 8px">Written for a posting titled “${esc(e.job.role)}” that asks for: ${esc(e.job.requirements.replace(/;/g, ","))}. ${checkText(e.check)}.</p>`
+      + `<div class="exres-pdf" role="img" aria-label="Preview of the ${esc(e.title)} example resume"><div class="thinking"><i></i>Loading the PDF…</div></div>`
+      + `<p class="note" style="margin:8px 0 0"><a href="${url(e, "pdf")}" target="_blank" rel="noopener">Open the PDF</a> in a new tab.</p>`;
+    const run = ++previewRun;
+    dlg.classList.add("pdfview");
+    const done = () => {                           // a close event that arrives late, with the dialog open again, isn't this one's
+      if (dlg.open) return;
+      dlg.removeEventListener("close", done);
+      previewRun++; dlg.classList.remove("pdfview"); dlg.querySelector(".sldbody").innerHTML = "";
+    };
+    dlg.addEventListener("close", done);
+    dlg.showModal();
+    drawPdf(url(e, "pdf"), dlg.querySelector(".exres-pdf"), () => run === previewRun);
   });
+}
+/* A PDF's pages drawn into the page as pictures, with pdf.js (already used to read PDF resumes), so the preview works in
+   every browser: a browser's own PDF viewer is often off (Chrome and Edge can be set to download PDFs) and phones don't
+   show PDFs inside a page. live() turns false when the preview is closed, to stop drawing. */
+let previewRun = 0;
+async function drawPdf(src, el, live) {
+  try {
+    const res = await _fetch(src, { cache: "no-cache" });
+    if (!res.ok) throw new ApiError(res.status === 404 ? "The PDF isn't on this site yet." : `The PDF didn't load (error ${res.status}).`);
+    const P = await lib("pdfjsLib");
+    await pdfWorker(P);
+    const pdf = await P.getDocument({ data: new Uint8Array(await res.arrayBuffer()) }).promise;
+    if (!live()) return;
+    el.innerHTML = "";
+    const width = Math.max(300, el.clientWidth - 24), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i), base = page.getViewport({ scale: 1 }), vp = page.getViewport({ scale: width / base.width * dpr });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
+      canvas.setAttribute("aria-label", `Page ${i} of ${pdf.numPages}`);
+      el.appendChild(canvas);
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+      if (!live()) return;
+    }
+  } catch (err) {
+    logProblem("preview " + src, err);
+    if (live()) el.innerHTML = `<p class="note" style="margin:0;padding:16px">${esc(err instanceof ApiError ? err.message : "The preview couldn't be drawn.")} Use Open the PDF below, or the PDF button to download it.</p>`;
+  }
 }
 
 /* The How to use guide as a side panel: groups that fold (remembered), a compact rail of initials, one section at a time
@@ -6817,11 +7202,14 @@ async function runAts(el,id,text){
   if(!String(text||"").trim()){el.classList.add("hidden");return}
   let r;try{r=await api("/api/ats",{id,text})}catch(e){return}
   if(seq!==atsSeq||!document.body.contains(el))return;
-  const k=r.keywords;
-  el.innerHTML=`<div class="atshead"><b>ATS check</b><span>${r.passed} of ${r.total} passed${k?` · ${k.pct}% of the posting’s keywords`:""}</span></div>
-    <ul class="atslist">${r.checks.map(c=>`<li class="${c.ok?"ok":"warn"}"><span class="atsmark" aria-hidden="true">${c.ok?"✓":"!"}</span><div><b>${esc(c.label)}</b> <span>${esc(c.detail)}</span></div></li>`).join("")}</ul>
-    <p class="note">Edit the resume above and the check updates. It looks at what an ATS reads: headings, contact details, job lines, dates, characters, and the keywords from this listing’s “What they ask for”.</p>`;
+  el.innerHTML=atsHtml(r,"Edit the resume above and the check updates. It looks at what an ATS reads: headings, contact details, job lines, dates, characters, and the keywords from this listing’s “What they ask for”.");
   el.classList.remove("hidden");
+}
+function atsHtml(r,about){
+  const k=r.keywords;
+  return `<div class="atshead"><b>ATS check</b><span>${r.passed} of ${r.total} passed${k?` · ${k.pct}% of the posting’s keywords`:""}</span></div>
+    <ul class="atslist">${r.checks.map(c=>`<li class="${c.ok?"ok":"warn"}"><span class="atsmark" aria-hidden="true">${c.ok?"✓":"!"}</span><div><b>${esc(c.label)}</b> <span>${esc(c.detail)}</span></div></li>`).join("")}</ul>
+    <p class="note">${about}</p>`;
 }
 function setupDraft(j,o){
   const out=$(o.key+"Out"),note=$(o.key+"Note"),btn=$(o.key+"Btn"),stop=$(o.key+"Stop"),copy=$(o.key+"Copy"),save=$(o.key+"Save"),fileEl=$(o.key+"File");
@@ -7046,7 +7434,7 @@ function renderResume(){
   const el=$("resumepage");if(!el||VIEW!=="resume")return;
   const r=S.resume||{},head=`<div class="vhead"><h2>Your resume</h2><p>The resume Job tracker tailors for each application. Your original file is never changed.</p></div>`;
   const up=(label,cls)=>`<button class="btn${cls?" "+cls:""}" type="button" data-act="upload-resume">${icon("plus")}${label}</button>`;
-  if(!r.ok){el.innerHTML=head+`<div class="empty-brief"><h3>No resume yet</h3><p class="note" style="margin:0 0 16px;max-width:60ch">Upload the resume you send to employers. A Word file works best; a text-based PDF, .txt or .md file also works. Job tracker reads it to tailor resumes and cover letters, and to show how well you match each listing.</p>${up("Upload resume","primary")}</div>`;return}
+  if(!r.ok){el.innerHTML=head+`<div class="empty-brief"><h3>No resume yet</h3><p class="note" style="margin:0 0 16px;max-width:60ch">Upload the resume you send to employers. A Word file works best; a text-based PDF, .odt, .rtf, .txt or .md file also works. Job tracker reads it to tailor resumes and cover letters, and to show how well you match each listing.</p>${up("Upload resume","primary")}</div>`;return}
   const meta=(S.resumes||[]).find(x=>x.file===r.file),secs=r.sections||[],skills=r.skills||[];
   const usual=[["Summary",/SUMMARY|PROFILE|OBJECTIVE|ABOUT/],["Skills",/SKILL|TECHNOLOG|COMPETENC/],["Experience",/EXPERIENCE|EMPLOYMENT|WORK HISTORY|CAREER/],["Education",/EDUCATION|TRAINING|CERTIF/]];
   const absent=usual.filter(([,rx])=>!secs.some(s=>rx.test(s.toUpperCase()))).map(([n])=>n);
@@ -7060,26 +7448,92 @@ function renderResume(){
     <section class="panel rspanel rsfile"><h3>${icon("file")}${esc(r.file)}</h3>
       <div class="rsstats"><div><b>${(r.words||0).toLocaleString()}</b><span>words</span></div><div><b>${secs.length}</b><span>${secs.length===1?"section":"sections"}</span></div><div><b>${skills.length}</b><span>skills found</span></div>${meta?`<div><b>${meta.kb}</b><span>KB</span></div>`:""}</div>
       <p class="rswhere"><span class="note">Saved in</span><code>${esc(where||"Your resume folder")}</code></p>
-      <div class="row2">${up("Upload a new one")}${onDisk?`<button class="btn ghost" type="button" id="rsFolder">${icon("folder")}Open resume folder</button>`:""}</div></section>
+      <div class="row2"><button class="btn primary" type="button" id="rsAts" title="Rewrites this resume, whatever its layout, as one plain column with standard headings that applicant tracking systems read well. Your facts stay the same.">Make an ATS version</button>${up("Upload a new one")}${onDisk?`<button class="btn ghost" type="button" id="rsFolder">${icon("folder")}Open resume folder</button>`:""}</div></section>
+    ${atsPanel()}
     <section class="panel rspanel"><h3>How it covers your listings</h3>
       ${scored.length?`<div class="rsstats"><div><b>${avg}%</b><span>average skills match</span></div><div><b>${strong}</b><span>of ${scored.length} listings at 70% or more</span></div></div>
       ${top.length?`<p class="note">Skills your listings ask for that your resume doesn’t mention. If you have any of them, add them to your resume so drafts can use them.</p>${chips(top.map(([s,n])=>`${esc(s)} <em>${n}</em>`),"rsgaps")}`:`<p class="note">Your resume mentions every skill your listings ask for.</p>`}`
       :`<p class="note">Once your tracker has listings, this shows how well your resume covers the skills they ask for.</p><button class="btn small" type="button" data-go="search">Find jobs</button>`}</section>
     ${resumeChooser(r)}
     <section class="panel rspanel"><h3>Sections</h3>
-      ${secs.length?chips(secs.map(esc)):`<p class="note">No section headings found. Put each heading on its own line in capitals (SUMMARY, SKILLS, EXPERIENCE, EDUCATION) so drafts keep your layout.</p>`}
+      ${secs.length?chips(secs.map(esc)):`<p class="note">No section headings found. Put each heading on its own line (SUMMARY, SKILLS, EXPERIENCE, EDUCATION) so drafts keep your layout.</p>`}
       ${secs.length&&absent.length?`<p class="note">Most resumes also have: ${absent.join(", ")}.</p>`:""}</section>
     <section class="panel rspanel"><h3>Skills Job tracker recognises</h3>
       ${skills.length?chips(skills.map(esc)):`<p class="note">None of the skills Job tracker knows were found. Listing your tools and languages in a SKILLS section helps the match.</p>`}
       <p class="note">These are what the skills match on each listing compares against.</p></section>
-    <details class="panel rspanel rstext"><summary>The text Job tracker reads</summary><p class="note">If something looks jumbled here, drafts will be too. Saving your resume as a simple Word file usually fixes it.</p><pre>${esc(r.text||"")}</pre></details>
+    <details class="panel rspanel rstext"><summary>The text Job tracker reads</summary><p class="note">If something looks jumbled here, drafts will be too. Make an ATS version puts it back in order, or save your resume as a simple Word file.</p><pre>${esc(r.text||"")}</pre></details>
   </div>`;
   el.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
   if($("rsFolder"))$("rsFolder").onclick=()=>openPath({what:"resume"});
+  $("rsAts").onclick=()=>makeAtsResume($("rsAts"));
+  bindAtsPanel();
   el.querySelectorAll("input[name=rspick]").forEach(x=>x.onchange=async()=>{
     try{await api("/api/resume/select",{file:x.value});await loadState();renderResume();toast(x.value?`Using ${x.value}.`:"Picking the resume automatically.")}
     catch(e){toast(e.message);renderResume()}
   });
+}
+/* ---------- Resume: an ATS version of the resume in use, from whatever layout it came in ----------
+ATSDRAFT is the version being looked at: {text, notes, saved}. It stays while the page redraws, until it's discarded. */
+let ATSDRAFT=null,atsCheckSeq=0;
+async function makeAtsResume(btn){
+  if(!S.aiReady){toast("Set up drafting in Settings first.");openSettings();return}
+  const label=btn.textContent;btn.disabled=true;
+  try{
+    let reply;
+    if(isManual()){
+      const p=await api("/api/resume/ats",{mode:"prompt"});
+      reply=(await askChat({title:"Ask your chat for an ATS version of your resume",prompt:p.prompt,restore:p.restore,useLabel:"Use this resume"})).text;
+    }else{btn.textContent="Writing it…";reply=(await api("/api/resume/ats",{mode:"write"})).text}
+    const i=reply.indexOf(NOTES_MARK);
+    const text=repairResume((i>=0?reply.slice(0,i):reply).trim());
+    if(!text){toast("The reply was empty. Try again.");return}
+    ATSDRAFT={text,notes:i>=0?reply.slice(i+NOTES_MARK.length).trim():"",saved:null};
+    renderResume();
+    const p=$("rsAtsPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){if(e.name!=="AbortError")toast(e.message||"That didn’t work. Try again.")}
+  finally{if(document.body.contains(btn)){btn.disabled=false;btn.textContent=label}}
+}
+function atsPanel(){
+  const d=ATSDRAFT;if(!d)return "";
+  return `<section class="panel rspanel" id="rsAtsPanel" style="grid-column:1/-1"><h3>ATS version</h3>
+    <p class="note" style="margin:0 0 8px">One plain column with standard headings, made from your resume. Read it through and fix anything that’s off: the check below updates as you type.</p>
+    ${d.notes?`<p class="note" style="white-space:pre-line;margin:0 0 8px">${esc(d.notes)}</p>`:""}
+    <textarea id="rsAtsText" rows="18" spellcheck="true" aria-label="ATS version of your resume">${esc(d.text)}</textarea>
+    <div class="ats hidden" id="rsAtsCheck" aria-live="polite"></div>
+    <div class="row2" style="margin-top:12px"><button class="btn primary" type="button" id="rsAtsSave">${d.saved?"Save again":"Save Word and PDF"}</button>
+      ${d.saved?`<a class="btn" href="${esc(d.saved.pdf.url)}" target="_blank" rel="noopener">Open PDF</a><a class="btn" href="${esc(d.saved.docx.url)}" download="${esc(d.saved.docx.name)}">Download Word</a>`
+        +(S.resume&&S.resume.file===d.saved.file?`<span class="note">Drafts use it now.</span>`:`<button class="btn" type="button" id="rsAtsUse">Use it for drafts</button>`):""}
+      <button class="btn ghost" type="button" id="rsAtsDrop">Discard</button><span class="note" id="rsAtsOut"></span></div></section>`;
+}
+function bindAtsPanel(){
+  const t=$("rsAtsText");if(!t)return;
+  let timer=0;
+  const check=async()=>{
+    const seq=++atsCheckSeq,el=$("rsAtsCheck");
+    let r;try{r=await api("/api/resume/ats",{mode:"check",text:t.value})}catch(e){return}
+    if(seq!==atsCheckSeq||!el||!document.body.contains(el))return;
+    el.innerHTML=atsHtml(r,"It looks at what an ATS reads: contact details, headings, job lines, dates, characters and length. Craft resume on a job adds that posting’s keywords.");
+    el.classList.remove("hidden");
+  };
+  t.addEventListener("input",()=>{ATSDRAFT.text=t.value;clearTimeout(timer);timer=setTimeout(check,400)});
+  check();
+  $("rsAtsSave").onclick=async()=>{
+    const b=$("rsAtsSave");b.disabled=true;$("rsAtsOut").textContent="Saving the Word file and PDF…";
+    try{
+      const r=await api("/api/resume/ats",{mode:"save",text:t.value});
+      ATSDRAFT.saved=r;S.resumes=r.resumes||S.resumes;
+      toast(`Saved ${r.docx.name} and ${r.pdf.name}. It’s in Custom resumes, and you can pick it for drafts.`);
+      await loadState();renderResume();
+    }catch(e){$("rsAtsOut").textContent=e.message||"Couldn’t save it.";b.disabled=false}
+  };
+  if($("rsAtsUse"))$("rsAtsUse").onclick=async()=>{
+    try{await api("/api/resume/select",{file:ATSDRAFT.saved.file});await loadState();renderResume();toast(`Drafts now start from ${ATSDRAFT.saved.file}.`)}
+    catch(e){toast(e.message)}
+  };
+  $("rsAtsDrop").onclick=()=>{
+    if(!ATSDRAFT.saved&&!confirm("Discard this ATS version? It hasn’t been saved."))return;
+    ATSDRAFT=null;renderResume();
+  };
 }
 /* Which resume to use when the folder has several, like the tracker chooser: Automatic, or one file always. */
 function resumeChooser(r){
@@ -7605,8 +8059,10 @@ function renderSearch(){
   <div class="sgrid">
     <section class="panel sform" aria-label="Search criteria">
       <h3>What you’re looking for</h3>
+      ${S.resume&&S.resume.ok||engine==="auto"?"":`<p class="note" style="margin:0 0 12px">No resume yet, so results are matched to your search: fill in the roles you want. <button class="btn small ghost" type="button" data-act="upload-resume">Upload resume</button> to see your fit, matches and gaps for each posting.</p>`}
       <div class="fgrid">
-        <label class="wide">Roles or keywords<input id="sRoles" value="${esc(c.roles)}" placeholder="e.g. C# developer, MES developer"></label>
+        <label class="wide">Roles or keywords (up to ${MAX_ROLES})<input id="sRoles" value="${esc(c.roles)}" placeholder="e.g. C# developer, MES developer" aria-describedby="sRolesWarn"></label>
+        <p class="note wide${tooManyRoles(c.roles)?"":" hidden"}" id="sRolesWarn" role="alert" style="color:var(--red);margin:-6px 0 0">${esc(rolesWarning(c.roles))}</p>
         <label>Near<input id="sLoc" value="${esc(c.location)}"></label>
         <label>Within<select id="sKm">${opt([["15","15 km"],["30","30 km"],["50","50 km"],["100","100 km"],["150","150 km"]],c.km)}</select></label>
         <label>Work model<select id="sWm">${opt([["Any","Any"],["On-site","On-site"],["Hybrid","Hybrid"],["Remote","Remote"],["Hybrid or remote","Hybrid or remote"]],c.workModel)}</select></label>
@@ -7631,11 +8087,14 @@ function renderSearch(){
   const saveCrit=()=>{st.criteria=readCriteria();SEARCH.save(st);const b=$("boards");if(b)b.innerHTML=boardLinks(st.criteria).map(([n,u,t])=>`<a class="tile" href="${esc(u)}" target="_blank" rel="noopener"><span class="site">${esc(n)}</span>${esc(t)}</a>`).join("")};
   ["sRoles","sLoc","sKm","sWm","sDays","sPay","sCount","sCountN","sExtra"].forEach(id=>$(id).addEventListener("change",saveCrit));
   $("sCount").addEventListener("change",()=>{const c=$("sCount").value==="custom";$("sCountN").hidden=!c;if(c){$("sCountN").focus();$("sCountN").select()}});
+  const warnRoles=()=>{const w=$("sRolesWarn"),bad=tooManyRoles($("sRoles").value);w.textContent=rolesWarning($("sRoles").value);w.classList.toggle("hidden",!bad);return bad};
+  $("sRoles").addEventListener("input",warnRoles);
   if($("sRun")){
     $("sRun").onclick=async()=>{
+      if(warnRoles()){toast(rolesWarning($("sRoles").value));$("sRoles").focus();return}
       saveCrit();const sid=st.activeSaved;st.activeSaved=null;searchCtl=new AbortController();
       $("sRun").disabled=true;$("sStop").classList.remove("hidden");$("sMeta").textContent=findEngine()==="chat"?"Waiting for your chat’s reply…":!apiProvider()&&localWeb()?"Your local model is searching the web. This can take several minutes.":"Searching job boards. This usually takes 1 to 3 minutes.";
-      $("results").innerHTML=`<div class="thinking"><i></i>Searching and comparing postings with your resume…</div>`+[1,2,3].map(()=>`<div class="skel" style="margin-top:12px"><b></b><b></b><b style="width:85%"></b></div>`).join("");
+      $("results").innerHTML=`<div class="thinking"><i></i>${S.resume&&S.resume.ok?"Searching and comparing postings with your resume…":"Searching for postings that match your search…"}</div>`+[1,2,3].map(()=>`<div class="skel" style="margin-top:12px"><b></b><b></b><b style="width:85%"></b></div>`).join("");
       if(typeof S.drafting==="number")S.drafting++;
       try{
         const found=(await SEARCH.run(st.criteria,searchCtl.signal)).map(r=>Object.assign(cleanRow(r),{_sel:!isTracked(r)}));
@@ -7712,9 +8171,20 @@ function renderResults(){
   };
 }
 
-/* Save results as a new tracker file in the tracker folder (a copy of the current tracker plus these jobs), then reload. */
+/* Find jobs takes up to two roles at a time (the same split as the server's splitRoles): a longer list makes a chat's
+   reply too long to come back whole. */
+const MAX_ROLES=2;
+const splitRoles=s=>String(s||"").split(/[,;|\n]|\s+or\s+/i).map(r=>r.trim()).filter(Boolean);
+const tooManyRoles=s=>splitRoles(s).length>MAX_ROLES;
+const rolesWarning=s=>{const n=splitRoles(s).length;return n>MAX_ROLES?`That’s ${n} roles. Search for up to ${MAX_ROLES} at a time, for example “teacher, tutor”, then run another search for the rest.`:""};
+const searchRoles=()=>((SEARCH.state||{}).criteria||{}).roles||"";
+/* "teacher, tutor" gives Teacher_and_Tutor, for the name of a file made from that search (as the server's trackerPrefix) */
+const rolesName=s=>splitRoles(s).slice(0,MAX_ROLES).map(r=>r.replace(/C#/g,"CSharp").replace(/\+/g,"Plus").replace(/[^\p{L}\p{N} -]+/gu," ")
+  .split(/[\s-]+/).filter(Boolean).map(w=>w[0].toUpperCase()+w.slice(1)).join("_")).filter(Boolean).join("_and_");
+/* Save results as a new tracker file in the tracker folder (a copy of the current tracker plus these jobs), then reload.
+   The file is named for the roles searched, e.g. Teacher_Job_Tracker_2026-10-16_14-30-00.xlsx. */
 async function generateTracker(rows){
-  const t=await api("/api/search/tracker-file",{rows:rows.map(x=>cleanRow(x))});
+  const t=await api("/api/search/tracker-file",{rows:rows.map(x=>cleanRow(x)),roles:searchRoles()});
   if(!t.file)return `All of them are already in ${t.inUse}, so no new file was needed.`;
   await loadState();
   const dup=t.skipped?` ${t.skipped} ${t.skipped===1?"was":"were"} already there.`:"";
@@ -7724,7 +8194,7 @@ async function generateTracker(rows){
 const SEARCH={state:null,
   async load(){try{const r=await api("/api/search/state");SEARCH.state=r.state||{}}catch(e){SEARCH.state={}}},
   canWeb(){return findEngine()!=="auto"},
-  introText(){return findEngine()==="chat"?"Job tracker writes a search prompt from your criteria and resume. Paste it into ChatGPT or Claude with web search on, then paste the reply back. Results come back in your tracker’s columns, ready to review and add.":SEARCH.canWeb()?"Search the web for current postings that fit your resume. Results come back in your tracker’s columns, ready to review and add.":"Search the job boards, then paste the postings you like. Each one comes back in your tracker’s columns, with fit, matches and gaps against your resume."},
+  introText(){return findEngine()==="chat"?"Job tracker writes a search prompt from your criteria and resume (if you’ve added one). Paste it into ChatGPT or Claude with web search on, then paste the reply back. Results come back in your tracker’s columns, ready to review and add.":SEARCH.canWeb()?"Search the web for current postings that fit your resume. Results come back in your tracker’s columns, ready to review and add.":"Search the job boards, then paste the postings you like. Each one comes back in your tracker’s columns, with fit, matches and gaps against your resume."},
   formNote(){return SEARCH.canWeb()?"Every result links to its posting so you can check it before applying.":(S.aiReady?"Searching the web needs an Anthropic or OpenAI key in Settings. Your local model can still format postings you paste.":"Set up drafting in Settings to search the web and format postings.")},
   emptyText(){return SEARCH.canWeb()?"Set your criteria and search the web, or paste a posting you found on a job board.":"Press Find jobs above, or open a job board with the links on the right and paste a posting you like under “Add a posting you found.”"},
   webText(){return SEARCH.canWeb()?"Search the web for roles that fit your resume.":"Search the boards and paste postings to add."},
@@ -7735,10 +8205,10 @@ const SEARCH={state:null,
       const p=await api("/api/prompt",{kind:"search",criteria:c,chat:true});
       const r=await askChat({title:"Ask your chat to find jobs",prompt:p.prompt,restore:p.restore,web:true,useLabel:"Generate tracker"});
       const d=await api("/api/import",{kind:"search",criteria:c,text:r.text});SEARCH.hidden=d.hidden||0;
-      const rows=d.rows||[];SEARCH.note="";
+      const rows=d.rows||[];SEARCH.note=d.cut?" The chat’s reply was cut off, so its last result was left out. To get the rest, ask the chat to continue, then press Write the search prompt again and paste both parts together.":"";
       if(rows.length){                               // the reply also becomes a new tracker file in the Job tracker folder
-        try{SEARCH.note=" "+await generateTracker(rows)}
-        catch(e){SEARCH.note=" "+(e.message||"Couldn’t create the tracker file.")}
+        try{SEARCH.note+=" "+await generateTracker(rows)}
+        catch(e){SEARCH.note+=" "+(e.message||"Couldn’t create the tracker file.")}
       }
       return rows;
     }
@@ -7755,11 +8225,11 @@ const SEARCH={state:null,
       return (await api("/api/import",{kind:"parse",text:r.text,url})).row;
     }
     return (await api("/api/search/parse",{text,url})).row},
-  async add(rows){const d=await api("/api/tracker/add",{rows});await loadState();return d.added.length},
+  async add(rows){const d=await api("/api/tracker/add",{rows,roles:searchRoles()});await loadState();return d.added.length},
   async exportXlsx(rows){
     const res=await fetch("/api/search/export",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({rows})});
     if(!res.ok){const d=await res.json().catch(()=>({}));throw new Error(d.error||"Couldn’t create the file.")}
-    const blob=await res.blob(),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=stampedName("Job_Search_Results");
+    const blob=await res.blob(),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=stampedName([rolesName(searchRoles()),"Job_Search_Results"].filter(Boolean).join("_"));
     document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);toast("Downloaded.");
   },
   save(st){SEARCH.state=st;clearTimeout(SEARCH._t);SEARCH._t=setTimeout(()=>{api("/api/search/state",{state:st}).catch(()=>{})},400)}
