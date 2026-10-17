@@ -2060,7 +2060,7 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
 .prep-empty > .note{margin:0;font-size:14.5px}
 .prep-empty .peek{justify-content:center;margin:18px 0 22px;max-width:560px}
 .prep-empty .peek span{font-size:12.5px;padding:4px 11px}
-/* Resume tab: your resume and Generate an ATS-proof resume side by side, with a drop zone for any resume file */
+/* Resume tab: your resume and ATS Resume Optimizer side by side, with a drop zone for any resume file */
 .rsgrid .rsfile{grid-column:auto}
 .rsstart > .empty-brief{grid-column:auto;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .rsatsgen{display:flex;flex-direction:column;gap:12px}
@@ -2082,6 +2082,25 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
 .dropzone.busy .dz-ic{animation:dzpulse 1.2s ease-in-out infinite}
 @keyframes dzpulse{50%{opacity:.5;transform:scale(.92)}}
 :root[data-motion="reduce"] .dropzone.busy .dz-ic{animation:none}
+/* The "Downloaded" message's Open PDF button, and the optimizer's "Use this as your main resume?" question */
+.toast .toast-act{margin-left:12px;padding:3px 10px;min-height:0;pointer-events:auto;background:var(--accent);color:var(--accent-ink,#fff);border:0}
+.toast:has(.toast-act){pointer-events:auto}
+.rsask{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-top:14px;padding:12px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--accent-line);background:var(--accent-soft)}
+.rsask > b{color:var(--text)}
+.rsask .note{margin:0;flex:1 1 220px}
+.rsask .row2{margin:0}
+/* Drag and drop: a dimmed page with a hint while a file is dragged over it, and the upload it will go to outlined */
+.drophint{position:fixed;inset:0;z-index:9000;display:none;place-items:center;pointer-events:none;
+  background:color-mix(in srgb,var(--bg) 55%,transparent);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+body.dragging .drophint{display:grid}
+.drophint > div{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 36px;border:2px dashed var(--accent);
+  border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-lift);text-align:center}
+.drophint .ic{width:28px;height:28px;color:var(--accent)}
+.drophint b{font-size:16px;color:var(--text)}
+.drophint span{font-size:12.5px;color:var(--muted)}
+.drop-on{outline:2px dashed var(--accent)!important;outline-offset:3px;position:relative;z-index:9001}
+body.dragging #rsDrop{position:relative;z-index:9001}
 /* Resume tab: three tabs (My resume, Saved documents, Examples); the grid shows the open tab's panels */
 .rstabs{display:flex;gap:4px;margin:4px 0 16px;border-bottom:1px solid var(--line)}
 .rstabs button{display:flex;align-items:center;gap:7px;padding:10px 14px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;
@@ -2259,6 +2278,11 @@ body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved d
     </div>
     <div class="spane" data-pane="general">
     <fieldset>
+      <legend>Downloads</legend>
+      <label>When a resume or cover letter is saved, download<select id="dlFmt"><option value="both">Word and PDF</option><option value="docx">Word only</option><option value="pdf">PDF only</option></select></label>
+      <p class="note" style="margin:0">Downloads start on their own, unless you chose a folder in Local files (then they’re saved there). This choice is saved right away.</p>
+    </fieldset>
+    <fieldset>
       <legend>Opening Job tracker</legend>
       <label>Open in<select id="brSel"></select></label>
       <label class="inline"><input type="checkbox" id="brAuto"> Open automatically when Job tracker starts</label>
@@ -2412,17 +2436,22 @@ const addDaysISO = (iso, n) => utcISO(new Date(isoToUTC(iso) + n * 864e5));
 const daysBetweenISO = (a, b) => Math.round((isoToUTC(b) - isoToUTC(a)) / 864e5);
 const escRe = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const stamp = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
-const stampedName = (prefix = "Job_Search_Tracker") => `${prefix}_${stamp()}.xlsx`;
+/* A new job tracker file's name: "Job Tracker - HR Assistant - Oct 17.xlsx", or "Job Tracker - Oct 17.xlsx" with no roles
+   (uniqueTrackerName adds " 2" when there's one already) */
+const stampedName = (roles = "") => `Job Tracker${roles ? " - " + roles : ""} - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}.xlsx`;
 /* The roles in Find jobs' Roles box: split at commas, semicolons, bars, new lines and " or " (not at "/" or "and",
    which are inside titles like "C# / .NET Developer" and "Health and Safety Coordinator"). A search takes up to
    MAX_ROLES of them, since a longer list makes a chat's reply too long to come back whole. */
 const MAX_ROLES = 2;
 const splitRoles = s => String(s || "").split(/[,;|\n]|\s+or\s+/i).map(r => r.trim()).filter(Boolean);
-/* A tracker's file name prefix from the roles searched: "teacher, tutor" gives Teacher_and_Tutor_Job_Tracker. */
+/* The roles part of a tracker's file name: "teacher, hr assistant" gives "Teacher and HR Assistant" (common short forms
+   like HR, IT and QA in capitals), or "" with no roles. */
+const NAME_CAPS = new Set(["hr", "it", "qa", "ui", "ux", "ai", "ml", "pm", "rn", "cad", "cnc", "sql", "erp", "mes"]);
 function trackerPrefix(roles) {
   const parts = splitRoles(roles).slice(0, MAX_ROLES).map(r => safeName(r, 30).replace(/\+/g, "Plus")
-    .replace(/[^\p{L}\p{N} -]+/gu, " ").split(/[\s-]+/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join("_")).filter(Boolean);
-  return parts.length ? parts.join("_and_") + "_Job_Tracker" : "Job_Search_Tracker";
+    .replace(/[^\p{L}\p{N} #.\/-]+/gu, " ").split(/\s+/).filter(Boolean)
+    .map(w => NAME_CAPS.has(w.toLowerCase()) ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1)).join(" ")).filter(Boolean);
+  return parts.join(" and ");
 }
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -4873,6 +4902,29 @@ async function buildPdf(kind, text, style, title, info = {}) {
 }
 
 /* ---------- the saved files: the browser's applications/ folder ---------- */
+/* A job title for a file name: at most 50 characters, cut at a word, without a bracket left open: "HR Assistant – HR Shared Services" */
+function roleName(role) {
+  let s = safeName(role, 200);
+  if (s.length > 50) s = s.slice(0, 51).replace(/\s+\S*$/, "");
+  if (s.lastIndexOf("(") > s.lastIndexOf(")")) s = s.slice(0, s.lastIndexOf("("));
+  return s.replace(/[\s\-–—,;:]+$/, "") || safeName(role, 50);
+}
+/* A shorter job title for a document's name: the part before a dash, bracket or comma, at most 30 characters, cut at a
+   word: "HR Assistant – HR Shared Services (Fall 2026 Co-op)" gives "HR Assistant" */
+function shortRole(role) {
+  let s = safeName(String(role || "").split(/\s[–—-]\s|\(|,/)[0], 200).trim();
+  if (s.length > 30) s = s.slice(0, 31).replace(/\s+\S*$/, "");
+  return s || roleName(role);
+}
+/* The person's name from the first line of their resume, for document names ("JANE DOE" gives "Jane Doe"), or fallback
+   when that line doesn't look like a name */
+function personName(text, fallback) {
+  const first = String(text || "").split(/\r?\n/).map(l => l.trim()).find(Boolean) || "";
+  let n = first.split(/\s*[|•·,]\s*/)[0].trim();
+  if (!n || n.length > 40 || /[\d@]/.test(n) || n.split(/\s+/).length > 5) return safeName(fallback || "Resume", 40);
+  if (n === n.toUpperCase()) n = n.toLowerCase().replace(/(^|[\s'-])\p{L}/gu, c => c.toUpperCase());
+  return safeName(n, 40);
+}
 function jobFolder(job) { return `${safeName(job.company, 40)} - ${safeName(job.role, 50)}`; }
 async function fileExists(rel) { return (await kv.get("file:" + rel)) !== undefined; }
 async function putFile(folder, name, blob, type, meta) {
@@ -5228,14 +5280,16 @@ async function apiSave(req) {
   const folder = jobFolder(job), company = safeName(job.company, 40);
   const have = new Set((await filesIn(folder)).map(f => f.name.toLowerCase()));
   if (kind === "answers") {
-    const name = uniqueName(have, `Application Answers - ${company}.md`);
+    const name = uniqueName(have, `Application Answers - ${company} - ${roleName(job.role)}.md`);
     const rel = await putText(folder, name, `# Application answers: ${job.company}, ${job.role}\n\n${text.trim()}\n`);
     await bump();
+    await autoDownload([[(await kv.get("file:" + rel)).blob, name]], "answers:" + (job.id || b.id), text);
     return Object.assign(fileInfo(rel, (await kv.get("file:" + rel)).blob), { path: rel, folder });
   }
-  // named after the resume it was tailored from and the application: "Jane_Doe_Resume - Software Developer - Contoso"
-  const source = await resumeFor(b.id), app = `${safeName(job.role, 50)} - ${company}`;
-  const base = kind === "resume" ? `${safeName(String(source.file || "Resume").replace(/\.[^.]+$/, ""), 40)} - ${app}` : `Cover Letter - ${app}`;
+  // named the way employers expect, your name first, then the document, the company and a short job title:
+  // "Jane Doe - Resume - Contoso - Software Developer", "Jane Doe - Cover Letter - Contoso - Software Developer"
+  const source = await resumeFor(b.id), person = personName(source.text, String(source.file || "Resume").replace(/\.[^.]+$/, ""));
+  const base = `${person} - ${kind === "resume" ? "Resume" : "Cover Letter"} - ${company} - ${shortRole(job.role)}`;
   let stem = base, i = 1;
   while (have.has((stem + ".docx").toLowerCase()) || have.has((stem + ".pdf").toLowerCase())) { i++; stem = `${base} v${i}`; }
   const style = source.style || null, meta = { kind, jobId: job.id || b.id, role: job.role, company: job.company, from: source.file || "" };
@@ -5255,8 +5309,27 @@ async function apiSave(req) {
   await putText(folder, "listing.md", `# ${job.role}\n\n**${job.company}**, ${job.location}\n\n- Pay: ${job.pay || "Not listed"}\n- Work model: ${job.workModel || "Not listed"}\n`
     + `- Listing: ${job.source || "n/a"}\n\n## What they ask for\n\n${job.requirements || ""}\n\n## Where your resume matches\n\n${job.match || ""}\n\n## Gaps to cover\n\n${job.gaps || ""}\n`);
   await bump();
+  await autoDownload([[docx, stem + ".docx"], [pdf, stem + ".pdf"]], kind + ":" + (job.id || b.id), text);
   const d = fileInfo(relD, docx), p = fileInfo(relP, pdf);
   return Object.assign({}, d, { path: relD, folder, docx: d, pdf: p });
+}
+/* Every file Job tracker makes is downloaded as soon as it's made, unless it was just saved into the folder you chose
+   (Saved documents, Choose folder), where it already is on your computer. A short gap between files keeps the browser
+   from dropping the second download.
+   Settings, Downloads picks Word, PDF or both. key and text: the same document saved again with no changes isn't
+   downloaded again. The page shows a "Downloaded" message (jt-downloaded) with an Open button for a PDF. */
+const LASTDL = new Map();
+async function autoDownload(files, key, text) {
+  if ((await folderReady(false)) === "granted") return;
+  if (key) { if (LASTDL.get(key) === text) return; LASTDL.set(key, text); }
+  let fmt = "both";
+  try { fmt = localStorage.getItem("jt-download") || "both"; } catch (e) {}
+  const pick = files.filter(([, n]) => fmt === "both" || !/\.(docx|pdf)$/i.test(n) || n.toLowerCase().endsWith("." + fmt));
+  for (const [i, [blob, name]] of pick.entries()) {
+    if (i) await new Promise(r => setTimeout(r, 400));
+    downloadBlob(blob, name);
+  }
+  if (pick.length) window.dispatchEvent(new CustomEvent("jt-downloaded", { detail: pick.map(([blob, name]) => ({ blob, name })) }));
 }
 async function apiDownload(req) {
   const f = await kv.get("file:" + (req.query.f || ""));
@@ -5369,7 +5442,12 @@ async function apiOffers(req) {
 }
 
 /* ---------- trackers ---------- */
-async function apiTrackerCreate(req) { return { file: await createTracker(String(req.body.name || "")) }; }
+async function apiTrackerCreate(req) { const file = await createTracker(String(req.body.name || "")); await downloadNewTracker(file); return { file }; }
+/* A job tracker file Job tracker just made is downloaded too, once it has its first rows (see autoDownload) */
+async function downloadNewTracker(file) {
+  const t = (await trackerList()).find(x => x.file === file);
+  if (t && !t.linked) downloadBlob(new Blob([await kv.get("tbytes:" + t.file)], { type: XLSX_MIME }), t.file);
+}
 async function apiTrackerImport(req) {
   const text = unescapeChat(String(req.body.text || "").trim());
   if (!text) throw new ApiError("Paste the chat's reply first.");
@@ -5380,16 +5458,19 @@ async function apiTrackerImport(req) {
     catch (e2) { throw new ApiError("That doesn't look like job rows. Ask the chat for a JSON list of jobs (the prompts in this tab do), then paste its whole reply.", 422); }
   }
   if (!rows.length) throw new ApiError("There were no job rows in that reply. Each row needs at least a company and a role.", 422);
-  let created = false;
-  if (!(await trackerExists())) { await createTracker(); created = true; }
+  let created = "";
+  if (!(await trackerExists())) created = await createTracker();
   const { added, skipped } = await appendRows(rows), got = new Set(added);
-  return { added: added.length, skipped: skipped.length, created, names: rows.filter(r => got.has(slug(r.company, r.role))).map(r => r.company).slice(0, 10) };
+  if (created) await downloadNewTracker(created);
+  return { added: added.length, skipped: skipped.length, created: !!created, names: rows.filter(r => got.has(slug(r.company, r.role))).map(r => r.company).slice(0, 10) };
 }
 async function apiTrackerAdd(req) {
   const rows = (req.body.rows || []).filter(r => r && typeof r === "object");
   if (!rows.length) throw new ApiError("Pick at least one result to add.");
-  if (!(await trackerExists())) await createTracker(splitRoles(req.body.roles).length ? stampedName(trackerPrefix(req.body.roles)) : "");   // the first search makes the job tracker file, named for its roles
-  return appendRows(rows);
+  const made = (await trackerExists()) ? "" : await createTracker(splitRoles(req.body.roles).length ? stampedName(trackerPrefix(req.body.roles)) : "");   // the first search makes the job tracker file, named for its roles
+  const res = await appendRows(rows);
+  if (made) await downloadNewTracker(made);
+  return res;
 }
 async function apiSearchExport(req) {
   const rows = (req.body.rows || []).filter(r => r && typeof r === "object");
@@ -5627,7 +5708,7 @@ async function apiResumeUpload(req) {
   const file = uniqueName(new Set(rs.map(r => r.file.toLowerCase())), safeName(base.slice(0, base.length - ext.length), 80) + ext);
   rs.push({ file, kb: Math.max(1, Math.round(bytes.length / 1024)), mtime: Date.now(), text, style });
   await kv.set("resumes", rs);
-  // use: false (Generate an ATS-proof resume) keeps the resume in use; the first resume is always used
+  // use: false (ATS Resume Optimizer) keeps the resume in use; the first resume is always used
   if (b.use !== false || !was) await saveSettings(Object.assign(clone(s), { resume_file: file }));
   else if (!s.resume_file) await saveSettings(Object.assign(clone(s), { resume_file: was.file }));
   await bump();
@@ -5647,12 +5728,12 @@ async function apiResumeSelect(req) {
   return { ok: true, resume: await resumeInfo() };
 }
 
-/* An ATS version of the resume in use, or of a file dropped on Generate an ATS-proof resume (Resume tab): mode "prompt" gives the prompt for a chat website
+/* An ATS version of the resume in use, or of a file dropped on ATS Resume Optimizer (Resume tab): mode "prompt" gives the prompt for a chat website
    (personal details as placeholders, restored in the page), "write" has the local model write it, "check" runs the ATS
    check on it, and "save" makes its Word file and PDF (in the look of the original) and adds it to your resumes, where
    it can be picked for drafting. It's aimed at the roles in Find jobs when there are some. */
 async function apiResumeAts(req) {
-  const b = req.body, mode = b.mode, s = await settings(), source = await readResume(b.file || s.resume_file);   // file: one dropped on Generate an ATS-proof resume
+  const b = req.body, mode = b.mode, s = await settings(), source = await readResume(b.file || s.resume_file);   // file: one dropped on ATS Resume Optimizer
   const crit = ((await kv.get("search")) || {}).criteria || {}, target = splitRoles(crit.roles).slice(0, MAX_ROLES).join(" or ");
   if (mode === "prompt") {
     const red = redact(source.text, source.file);
@@ -5662,13 +5743,14 @@ async function apiResumeAts(req) {
     if (!isConfigured(s) || isManual(s)) throw new ApiError("Writing with a model isn't set up. Open Settings and choose a local model, or use free chat.", 428);
     return { text: await generate(s, atsResumePrompt(source.text, target, s.about_me_extra), req.signal) };
   }
+  if (mode === "forget") { await forgetDropped(b.file); return { ok: true, resumes: listResumes(await resumeList()) }; }
   const text = mode === "check" && b.original ? source.text : String(b.text || "").trim();   // original: check the resume itself
   if (!text) throw new ApiError("There's no ATS version to " + (mode === "save" ? "save" : "check") + " yet.");
   const check = atsCheck(text, { role: "" }, source.text);
   if (mode === "check") return check;
   if (mode !== "save") throw new ApiError("Unknown request.");
   await folderReady(true);   // first, while the Save press still counts
-  const base = `${safeName(source.file.replace(/\.[^.]+$/, ""), 50)} - ATS`, folder = "ATS resume";
+  const base = `${personName(source.text, source.file.replace(/\.[^.]+$/, ""))} - Resume (ATS)`, folder = "ATS resume";   // "Jane Doe - Resume (ATS)"
   const have = new Set((await filesIn(folder)).map(f => f.name.toLowerCase()));
   let stem = base, i = 1;
   while (have.has((stem + ".docx").toLowerCase()) || have.has((stem + ".pdf").toLowerCase())) { i++; stem = `${base} v${i}`; }
@@ -5683,7 +5765,19 @@ async function apiResumeAts(req) {
   await kv.set("resumes", rs);
   if (!s.resume_file && inUse) await saveSettings(Object.assign(clone(s), { resume_file: inUse.file }));
   await bump();
-  return { file, docx: fileInfo(relD, docx), pdf: fileInfo(relP, pdf), check, resumes: listResumes(rs) };
+  await autoDownload([[docx, stem + ".docx"], [pdf, stem + ".pdf"]], "ats:" + source.file, text);
+  if (b.dropped) await forgetDropped(source.file);   // the optimized version replaces the file dropped on the optimizer
+  return { file, docx: fileInfo(relD, docx), pdf: fileInfo(relP, pdf), check, resumes: listResumes(await resumeList()) };
+}
+/* A resume dropped on the ATS Resume Optimizer is only needed while it's converted: once the optimized version is saved,
+   or the conversion is cancelled or discarded, it leaves your resumes, unless it's in use (a first resume always is). */
+async function forgetDropped(file) {
+  const s = await settings();
+  if (!file || s.resume_file === file || Object.values(s.job_resume || {}).includes(file)) return;
+  const rs = await resumeList();
+  if (!rs.some(r => r.file === file)) return;
+  await kv.set("resumes", rs.filter(r => r.file !== file));
+  await bump();
 }
 
 /* The Find jobs prompt and its restore map. forChat hides personal details from a chat website. */
@@ -6448,7 +6542,7 @@ function buildResumeTop(root) {
     for (const id of ["#rsAts", "#rsFolder"]) { const b = old.querySelector(id); if (b) tools.insertBefore(b, tools.lastChild); }
     old.remove();
   }
-  const docs = [["resume", "Custom resumes", "None yet · Craft one from a job, or generate an ATS-proof resume."],
+  const docs = [["resume", "Custom resumes", "None yet · Craft one from a job, or use the ATS Resume Optimizer."],
     ["letter", "Cover letters", "None yet · Write one from a job in Applications."]]
     .map(([kind, title, empty]) => {
       const box = document.createElement("section");
@@ -6458,7 +6552,7 @@ function buildResumeTop(root) {
     });
   const folderBox = document.createElement("section");
   folderBox.className = "panel rspanel rsfolder";
-  const gen = grid.querySelector(".rsatsgen");   // Generate an ATS-proof resume sits beside the resume card
+  const gen = grid.querySelector(".rsatsgen");   // ATS Resume Optimizer sits beside the resume card
   if (gen) top.after(gen);
   (gen || top).after(folderBox);
   fillFolder(folderBox).catch(() => folderBox.remove());
@@ -7624,9 +7718,9 @@ function renderResume(){
         <div><span class="rslabel">Sections</span>${secs.length?chips(secs.map(esc)):`<p class="note">No headings found. Put SUMMARY, SKILLS, EXPERIENCE and EDUCATION each on its own line.</p>`}
           ${secs.length&&absent.length?`<p class="note">Most resumes also have: ${absent.join(", ")}.</p>`:""}</div>
         <div><span class="rslabel">${skills.length} ${skills.length===1?"skill":"skills"} found</span>${skills.length?chips(skills.map(esc)):""}
-          ${skills.length<5?`<p class="note">Missing skills? List your tools in a SKILLS section, or generate an ATS-proof resume.</p>`:""}</div>
+          ${skills.length<5?`<p class="note">Missing skills? List your tools in a SKILLS section, or use the ATS Resume Optimizer.</p>`:""}</div>
       </div>
-      <details class="rstext"><summary>View the text Job tracker reads</summary><p class="note">If it looks jumbled here, drafts will be too. Generate an ATS-proof resume puts it back in order.</p><pre>${esc(r.text||"")}</pre></details>
+      <details class="rstext"><summary>View the text Job tracker reads</summary><p class="note">If it looks jumbled here, drafts will be too. The ATS Resume Optimizer puts it back in order.</p><pre>${esc(r.text||"")}</pre></details>
       <p class="rswhere note">${onDisk?`Saved in <code>${esc(where)}</code>`:esc(where||"Kept in this browser")}</p>
       <div class="row2">${up("Upload a new one")}${onDisk?`<button class="btn ghost" type="button" id="rsFolder">${icon("folder")}Open resume folder</button>`:""}</div></section>
     ${atsGenCard()}
@@ -7649,7 +7743,7 @@ function renderResume(){
 /* ---------- Resume: an ATS version of the resume in use, from whatever layout it came in ----------
 ATSDRAFT is the version being looked at: {text, notes, saved}. It stays while the page redraws, until it's discarded. */
 let ATSDRAFT=null,atsCheckSeq=0;
-/* file: a resume dropped on Generate an ATS-proof resume; without it, the resume in use. btn shows "Writing it…" when
+/* file: a resume dropped on ATS Resume Optimizer; without it, the resume in use. btn shows "Writing it…" when
    it's a button; the drop zone shows its own progress. */
 async function makeAtsResume(btn,file){
   if(!S.aiReady){toast("Set up drafting in Settings first.");openSettings();return}
@@ -7688,21 +7782,21 @@ async function fileB64(f){
   for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
   return btoa(bin);
 }
-/* Generate an ATS-proof resume: drop or choose any resume, and it comes back as one clean column with standard headings,
+/* ATS Resume Optimizer: drop or choose any resume, and it comes back as one clean column with standard headings,
    ready to save as Word and PDF. The dropped file joins your resumes but doesn't replace the one in use. */
 function atsGenCard(){
-  return `<section class="panel rspanel rsatsgen"><h3>${icon("sparkle")}Generate an ATS-proof resume</h3>
-    <p class="note">Drop any resume and get a clean Word and PDF version that hiring systems read correctly.</p>
+  return `<section class="panel rspanel rsatsgen"><h3>${icon("sparkle")}ATS Resume Optimizer</h3>
+    <p class="note">Converts any resume into a clean layout that applicant tracking systems read correctly, ready as Word and PDF.</p>
     ${ATSDRAFT?`<div class="rsready"><div><b>${icon("check")}Your ATS resume is ready</b><span class="note" id="rsReadyScore">${ATSDRAFT.before?`ATS check: ${ATSDRAFT.before.passed} of ${ATSDRAFT.before.total} before`:""}</span></div>
       <button class="btn small primary" type="button" id="rsGoReady">See it ↓</button></div>`:""}
-    <div class="dropzone" id="rsDrop" role="button" tabindex="0" aria-label="Choose a resume to make ATS-proof">
+    <div class="dropzone" id="rsDrop" role="button" tabindex="0" aria-label="Choose a resume to make ATS-optimized">
       <span class="dz-ic" aria-hidden="true">${icon("upload")}</span>
       <b id="rsDropMsg">Drag your resume here</b>
       <span class="note dz-hint">or <u>choose a file</u> · Word, PDF, .odt, .rtf, .txt or .md</span>
       <ol class="dzsteps" aria-label="Progress"><li data-s="read">Reading</li><li data-s="write">Writing</li><li data-s="ready">Ready</li></ol>
       <input type="file" id="rsDropFile" hidden accept=".docx,.pdf,.odt,.rtf,.txt,.md">
     </div>
-    ${S.resume&&S.resume.ok?`<button class="btn" type="button" id="rsAts" title="Makes an ATS-proof version of ${esc(S.resume.file)}">${icon("file")}Use my current resume</button>`:""}
+    ${S.resume&&S.resume.ok?`<button class="btn" type="button" id="rsAts" title="Makes an ATS-optimized version of ${esc(S.resume.file)}">${icon("file")}Use my current resume</button>`:""}
   </section>`;
 }
 /* The drop zone's three steps: done ones get a tick, the current one is highlighted. ATSBUSY keeps them while the page
@@ -7728,8 +7822,10 @@ function bindAtsGen(){
       const r=await api("/api/resume/upload",{name:f.name,data:await fileB64(f),use:false});
       S.resumes=r.resumes||S.resumes;
       if(!(S.resume&&S.resume.ok)&&r.resume&&r.resume.ok){S.resume=r.resume;showResume()}   // a first resume becomes the one in use
-      dzStep("write",isManual()?"Copy the prompt into your chat…":"Writing your ATS-proof resume…");
+      dzStep("write",isManual()?"Copy the prompt into your chat…":"Writing your ATS-optimized resume…");
       await makeAtsResume(z,r.file);
+      if(ATSDRAFT&&ATSDRAFT.from===r.file&&!ATSDRAFT.saved)ATSDRAFT.dropped=true;   // leaves your resumes once saved or discarded
+      else api("/api/resume/ats",{mode:"forget",file:r.file}).then(x=>{S.resumes=x.resumes||S.resumes}).catch(()=>{});   // cancelled
     }catch(e){toast(e.message||"That didn’t work. Try again.")}
     finally{dzStep(null)}
   };
@@ -7743,15 +7839,17 @@ function bindAtsGen(){
 }
 function atsPanel(){
   const d=ATSDRAFT;if(!d)return "";
-  return `<section class="panel rspanel" id="rsAtsPanel" style="grid-column:1/-1"><h3>ATS-proof version${d.from?` of ${esc(d.from)}`:""}</h3>
+  return `<section class="panel rspanel" id="rsAtsPanel" style="grid-column:1/-1"><h3>ATS-optimized version${d.from?` of ${esc(d.from)}`:""}</h3>
     <p class="note" style="margin:0 0 8px">One plain column with standard headings, made from your resume. Read it through and fix anything that’s off: the check below updates as you type.</p>
     ${d.notes?`<p class="note" style="white-space:pre-line;margin:0 0 8px">${esc(d.notes)}</p>`:""}
     <textarea id="rsAtsText" rows="18" spellcheck="true" aria-label="ATS version of your resume">${esc(d.text)}</textarea>
     <div class="ats hidden" id="rsAtsCheck" aria-live="polite"></div>
     <div class="row2" style="margin-top:12px"><button class="btn primary" type="button" id="rsAtsSave">${d.saved?"Save again":"Save Word and PDF"}</button>
       ${d.saved?`<a class="btn" href="${esc(d.saved.pdf.url)}" target="_blank" rel="noopener">Open PDF</a><a class="btn" href="${esc(d.saved.docx.url)}" download="${esc(d.saved.docx.name)}">Download Word</a>`
-        +(S.resume&&S.resume.file===d.saved.file?`<span class="note">Drafts use it now.</span>`:`<button class="btn" type="button" id="rsAtsUse">Use it for drafts</button>`):""}
-      <button class="btn ghost" type="button" id="rsAtsDrop">Discard</button><span class="note" id="rsAtsOut"></span></div></section>`;
+        +(S.resume&&S.resume.file===d.saved.file?`<span class="note">${icon("check")} This is your main resume now.</span>`:d.declined?`<button class="btn" type="button" id="rsAtsUse">Use as main resume</button>`:""):""}
+      <button class="btn ghost" type="button" id="rsAtsDrop">${d.saved?"Close":"Discard"}</button><span class="note" id="rsAtsOut"></span></div>
+    ${d.saved&&!d.declined&&!(S.resume&&S.resume.file===d.saved.file)?`<div class="rsask" role="group" aria-label="Use as main resume"><b>Use this as your main resume from now on?</b><span class="note">Tailored resumes and cover letters will start from it.</span>
+      <div class="row2"><button class="btn small primary" type="button" id="rsAskYes">Yes, use it</button><button class="btn small ghost" type="button" id="rsAskNo">Not now</button></div></div>`:""}</section>`;
 }
 function bindAtsPanel(){
   const t=$("rsAtsText");if(!t)return;
@@ -7770,19 +7868,24 @@ function bindAtsPanel(){
   $("rsAtsSave").onclick=async()=>{
     const b=$("rsAtsSave");b.disabled=true;$("rsAtsOut").textContent="Saving the Word file and PDF…";
     try{
-      const r=await api("/api/resume/ats",{mode:"save",text:t.value,file:ATSDRAFT.from});
-      ATSDRAFT.saved=r;S.resumes=r.resumes||S.resumes;
-      toast(`Saved ${r.docx.name} and ${r.pdf.name}. It’s in Custom resumes, and you can pick it for drafts.`);
+      const r=await api("/api/resume/ats",{mode:"save",text:t.value,file:ATSDRAFT.from,dropped:!!ATSDRAFT.dropped});
+      ATSDRAFT.saved=r;ATSDRAFT.dropped=false;S.resumes=r.resumes||S.resumes;
+      toast(`Saved ${r.docx.name}. It’s in Saved documents.`);
       await loadState();renderResume();
     }catch(e){$("rsAtsOut").textContent=e.message||"Couldn’t save it.";b.disabled=false}
   };
-  if($("rsAtsUse"))$("rsAtsUse").onclick=async()=>{
-    try{await api("/api/resume/select",{file:ATSDRAFT.saved.file});await loadState();renderResume();toast(`Drafts now start from ${ATSDRAFT.saved.file}.`)}
+  const useIt=async()=>{
+    try{await api("/api/resume/select",{file:ATSDRAFT.saved.file});await loadState();renderResume();toast(`${ATSDRAFT.saved.file} is your main resume now.`)}
     catch(e){toast(e.message)}
   };
+  if($("rsAtsUse"))$("rsAtsUse").onclick=useIt;
+  if($("rsAskYes"))$("rsAskYes").onclick=useIt;
+  if($("rsAskNo"))$("rsAskNo").onclick=()=>{ATSDRAFT.declined=true;renderResume()};
   $("rsAtsDrop").onclick=()=>{
     if(!ATSDRAFT.saved&&!confirm("Discard this ATS version? It hasn’t been saved."))return;
+    const gone=ATSDRAFT.dropped&&ATSDRAFT.from;
     ATSDRAFT=null;renderResume();
+    if(gone)api("/api/resume/ats",{mode:"forget",file:gone}).then(r=>{S.resumes=r.resumes||S.resumes;loadState()}).catch(()=>{});
   };
 }
 /* Which resume to use when the folder has several, like the tracker chooser: Automatic, or one file always. */
@@ -7794,6 +7897,77 @@ function resumeChooser(r){
     <label class="trow"><input type="radio" name="rspick" value=""${pinned?"":" checked"}><span><b>Automatic</b><span class="note">A Word file first, then PDF, then .md or .txt; the newest of that kind</span></span></label>${files.map(row).join("")}</div></section>`;
 }
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-act=upload-resume]"))$("resFile").click()});
+/* After a file downloads on its own: say so (after the "Saved" message), with Open for a PDF. Settings, Downloads picks
+   Word, PDF or both, kept in this browser. */
+window.addEventListener("jt-downloaded",e=>{
+  const files=e.detail||[],pdf=files.find(f=>/\.pdf$/i.test(f.name));
+  setTimeout(()=>{
+    toast(files.length>1?`Downloaded ${files.length} files to your computer.`:`Downloaded ${files[0].name} to your computer.`);
+    if(pdf){const b=document.createElement("button");b.type="button";b.className="btn small toast-act";b.textContent="Open PDF";
+      b.onclick=()=>{const w=window.open(URL.createObjectURL(pdf.blob),"_blank");if(!w)toast("Your browser blocked the new tab.")};$("toast").append(b)}
+  },2700);
+});
+if($("dlFmt")){
+  try{$("dlFmt").value=localStorage.getItem("jt-download")||"both"}catch(e){}
+  $("dlFmt").onchange=()=>{try{localStorage.setItem("jt-download",$("dlFmt").value)}catch(e){}toast("Saved.")};
+}
+/* Drag and drop works on every upload. A file dropped on an upload button or card goes to that upload; dropped elsewhere
+   on Home, Resume or Applications, a resume file goes to Upload resume and an .xlsx file opens as the job tracker file.
+   The hint says which. The ATS Resume Optimizer's drop zone handles its own drops. */
+const DROP_TARGETS=[["[data-act=upload-resume],.rsfile,.rsstart>.empty-brief","resFile"],["[data-act=sl-open-tracker],[data-act=create-tracker]","slTrkFile"],["#slRestore","slRestoreFile"]];
+const RESUME_EXTS=/\.(docx|pdf|odt|rtf|txt|md|doc|pages)$/i;
+const DROP_VIEWS=["home","resume","tracker"];   // pages where a file dropped anywhere is taken; elsewhere only on an upload
+const DROP_HINTS={resFile:["Drop to add this resume","Word, PDF, .odt, .rtf, .txt or .md. Several at once are fine."],
+  slTrkFile:["Drop to open this job tracker file","An Excel .xlsx file"],slRestoreFile:["Drop to restore this backup","The .json file from Back up everything"],
+  "":["Drop a job tracker file or a resume","An .xlsx file opens as your job tracker file; a resume is added to your resumes"]};
+function dropTarget(e){
+  const at=e.target.closest?e.target:e.target.parentElement;
+  if(!at||at.closest("#rsDrop"))return null;
+  for(const [sel,id] of DROP_TARGETS){const el=at.closest(sel);if(el&&$(id))return {el,id}}
+  if(!DROP_VIEWS.includes(VIEW)||document.body.classList.contains("in-company"))return null;
+  return {el:null,id:VIEW==="resume"?"resFile":""};
+}
+let dragDepth=0;
+const dropHint=()=>$("dropHint")||(document.body.insertAdjacentHTML("beforeend",`<div id="dropHint" class="drophint" aria-hidden="true"><div>${icon("upload")}<b></b><span></span></div></div>`),$("dropHint"));
+const isFileDrag=e=>e.dataTransfer&&[...e.dataTransfer.types].includes("Files");
+const clearDrop=()=>{dragDepth=0;document.body.classList.remove("dragging");document.querySelectorAll(".drop-on").forEach(x=>x.classList.remove("drop-on"))};
+document.addEventListener("dragenter",e=>{if(isFileDrag(e))dragDepth++});
+document.addEventListener("dragleave",e=>{if(isFileDrag(e)&&--dragDepth<=0)clearDrop()});
+document.addEventListener("dragover",e=>{
+  if(!isFileDrag(e))return;
+  const t=dropTarget(e);
+  if(!t){document.body.classList.remove("dragging");return}
+  e.preventDefault();e.dataTransfer.dropEffect="copy";
+  const h=dropHint(),[title,sub]=DROP_HINTS[t.id];
+  if(h.querySelector("b").textContent!==title){h.querySelector("b").textContent=title;h.querySelector("span").textContent=sub}
+  document.body.classList.add("dragging");
+  document.querySelectorAll(".drop-on").forEach(x=>{if(x!==t.el)x.classList.remove("drop-on")});
+  if(t.el)t.el.classList.add("drop-on");
+});
+/* Several resumes dropped at once are each added (the last one becomes the one in use); a job tracker file or a backup
+   takes one file, and says so when more were dropped. */
+async function addResumes(files){
+  let n=0;
+  for(const f of files){
+    if(f.size>8*1024*1024){toast(`${f.name} is over 8 MB, so it was skipped.`);continue}
+    try{const r=await api("/api/resume/upload",{name:f.name,data:await fileB64(f)});S.resume=r.resume;S.resumes=r.resumes||S.resumes;n++}
+    catch(e){toast(`${f.name}: ${e.message||"that didn’t upload."}`)}
+  }
+  if(n){showResume();await loadState();toast(`Added ${n} resumes. ${S.resume.file} is in use.`)}
+}
+document.addEventListener("drop",e=>{
+  if(!isFileDrag(e))return;
+  const t=dropTarget(e);clearDrop();if(!t)return;
+  e.preventDefault();
+  const all=[...e.dataTransfer.files],f=all[0];if(!f)return;
+  const id=t.id||(/\.xlsx$/i.test(f.name)?"slTrkFile":RESUME_EXTS.test(f.name)?"resFile":"");
+  if(!id){toast("Drop a resume (Word, PDF, .odt, .rtf, .txt or .md) or a job tracker file (.xlsx).");return}
+  if(id==="slTrkFile"&&!/\.xlsx$/i.test(f.name)){toast("A job tracker file is an Excel .xlsx file.");return}
+  if(id==="slRestoreFile"&&!/\.json$/i.test(f.name)){toast("A backup is a .json file.");return}
+  if(id==="resFile"){const rs=all.filter(x=>RESUME_EXTS.test(x.name));if(rs.length>1){addResumes(rs);return}}
+  const inp=$(id),dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;inp.dispatchEvent(new Event("change"));
+  if(all.length>1&&id!=="resFile")setTimeout(()=>toast(`Only ${f.name} was opened: drop one file at a time here.`),2800);
+});
 $("resFile").onchange=async()=>{
   const f=$("resFile").files[0];$("resFile").value="";if(!f)return;
   if(f.size>8*1024*1024){$("resOut").textContent="Choose a file under 8 MB.";return}
