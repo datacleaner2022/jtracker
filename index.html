@@ -2675,9 +2675,14 @@ function cleanBaseUrl(v) {
 }
 
 /* ---------- redact.py: personal details out of a resume before it goes into a prompt for a chat website ---------- */
-const REDACT_NOTE = "NOTE: the candidate's name, contact details and links were replaced with placeholders such as [NAME], [EMAIL], [PHONE] and " +
-  "[LINKEDIN URL]. Wherever the name or contact details belong (a resume header, a sign-off), use those placeholders exactly as written. " +
-  "They are filled in afterwards.\n\n";
+/* Lists only the placeholders this resume really has: naming [LINKEDIN URL] for a resume with no LinkedIn made chats add one. */
+const REDACT_MAIN = ["[NAME]", "[EMAIL]", "[PHONE]", "[ADDRESS]", "[POSTAL CODE]", "[LINKEDIN URL]", "[GITHUB URL]", "[PROFILE LINK]", "[LINK]"];
+const redactNote = restore => {
+  const used = REDACT_MAIN.filter(k => k in restore);
+  return "NOTE: the candidate's personal details were replaced with placeholders" + (used.length ? ": " + used.join(", ") : "") + ". " +
+    "Wherever those details belong (a resume header, a sign-off), use those placeholders exactly as written. They are filled in afterwards. " +
+    "Don't add any other placeholder or contact detail: if a detail isn't listed, the candidate doesn't have it, so leave it out.\n\n";
+};
 const RX = {
   EMAIL: /[A-Za-z0-9._%+\-]+@[A-Za-z0-9\-]+(?:\.[A-Za-z0-9\-]+)*\.[A-Za-z]{2,}/g,
   SIN: /(?<![\d-])\d{3}[ -]\d{3}[ -]\d{3}(?![\d-])/g,
@@ -2799,7 +2804,7 @@ function redact(text, filename = "") {
     out = out.replace(/(?:\[NAME\][ \t]+){2,}/g, "[NAME] ");
     first("[NAME]", full || tokens.join(" "), ["[YOUR NAME]", "[FULL NAME]", "[CANDIDATE NAME]"]);
   }
-  if (Object.keys(found).length) out = REDACT_NOTE + out;
+  if (Object.keys(found).length) out = redactNote(restore) + out;
   return { text: out, restore, found };
 }
 function redactSummary(found) {
@@ -8316,7 +8321,23 @@ function restoreText(t,map){
   let out=String(t||"");
   if(!map)return out;
   Object.keys(map).sort((a,b)=>b.length-a.length).forEach(k=>{out=out.replace(new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"gi"),()=>map[k])});
-  return out;
+  return dropLeftovers(out);
+}
+/* A placeholder still there after restoring is a detail the resume doesn't have (a chat added "[LINKEDIN]" to a resume
+   with no LinkedIn): take it out, with its label ("LinkedIn: ") and the separator next to it, so "a | b | [LINKEDIN]" reads "a | b". */
+const LEFTOVER=/\[[^\]\n]*\]\(\s*\[(?:YOUR |FULL |CANDIDATE )?(?:NAME|EMAIL(?: ADDRESS)?|PHONE(?: NUMBER)?|LINKEDIN(?: URL| PROFILE)?|GITHUB(?: URL| PROFILE)?|PROFILE LINK|LINK|WEBSITE(?: URL)?|PORTFOLIO(?: URL)?|(?:HOME )?ADDRESS|POSTAL CODE|ZIP CODE|POSTCODE)\]\s*\)|\[(?:YOUR |FULL |CANDIDATE )?(?:NAME|EMAIL(?: ADDRESS)?|PHONE(?: NUMBER)?|LINKEDIN(?: URL| PROFILE)?|GITHUB(?: URL| PROFILE)?|PROFILE LINK|LINK|WEBSITE(?: URL)?|PORTFOLIO(?: URL)?|(?:HOME )?ADDRESS|POSTAL CODE|ZIP CODE|POSTCODE)\](?!\()/gi;
+function dropLeftovers(t){
+  if(!LEFTOVER.test(t))return t;
+  LEFTOVER.lastIndex=0;
+  const SEP="[|•·,;]",GONE="\u0000";
+  return t.replace(LEFTOVER,GONE).split("\n").map(ln=>{
+    if(!ln.includes(GONE))return ln;
+    ln=ln.replace(new RegExp(`(?:\\b(?:LinkedIn|GitHub|Portfolio|Website|Web|Email|E-mail|Phone|Tel|Mobile|Address|Name)\\s*:\\s*)?${GONE}`,"gi"),GONE)
+      .replace(new RegExp(`^(\\s*(?:[-*•]\\s+)?)(?:${GONE}\\s*(?:${SEP}\\s*)?)+`),"$1")
+      .replace(new RegExp(`\\s*(?:${SEP}\\s*)?${GONE}`,"g"),"")
+      .replace(new RegExp(`\\s*${SEP}\\s*$`),"");
+    return /^\s*(?:[-*•]\s*)?$/.test(ln)?null:ln;
+  }).filter(ln=>ln!==null).join("\n");
 }
 function askChat(o){
   const dlg=$("chatDlg");
