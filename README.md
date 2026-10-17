@@ -5,9 +5,9 @@ Job tracker as one web page, hosted for free on GitHub Pages: nothing to install
 **Open it:** once GitHub Pages is on (see [Publishing](#publishing-for-the-repository-owner)), the site is at
 `https://<your-github-name>.github.io/<repository-name>/`.
 
-[![Watch the five-minute tour](guide/tutorial.jpg)](guide/tutorial.mp4)
+[![Watch the four-minute tour](guide/tutorial.jpg)](guide/tutorial.mp4)
 
-**[Watch the five-minute tour](guide/tutorial.mp4)**: every feature, with a made-up sample resume and free ChatGPT.
+**[Watch the four-minute tour](guide/tutorial.mp4)**: every feature, with a voiceover, a made-up sample resume and a free AI chat.
 In the app it's the **Watch the tour** button at the top of every page.
 
 Chrome and Edge work best; Firefox and Safari work too. The How to use guide (the **How to use** button) walks through

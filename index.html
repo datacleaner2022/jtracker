@@ -5074,10 +5074,10 @@ function delFileUrl(rel) { if (fileUrls[rel]) { URL.revokeObjectURL(fileUrls[rel
 Screenshots: guide/st-*.jpg (made-up data only). */
 const STATIC_GUIDE = [
   { id: "video", title: "Watch the tutorial",
-    intro: "A five-minute tour of every feature, using a made-up sample resume and free ChatGPT. The replies in it are the ones ChatGPT really gave.",
+    intro: "A four-minute tour of every feature, with a voiceover, using a made-up sample resume and a free AI chat.",
     steps: [
-      { text: "It follows one job search from start to finish: **add a resume**, **find jobs** with ChatGPT, **craft an ATS-ready resume** and a **cover letter**, **prepare for the interview**, and **make it yours** in Settings. The sections below go through each step in detail.",
-        video: "tutorial.mp4", poster: "tutorial.jpg", caption: "Job tracker tour, 5 minutes, with captions and background music." },
+      { text: "It follows one job search from start to finish: **choose how Job tracker uses AI**, **add a resume**, **find jobs** with a free AI chat, **craft an ATS-ready resume** and a **cover letter**, **prepare for the interview**, and **keep your files** safe. The sections below go through each step in detail.",
+        video: "tutorial.mp4", poster: "tutorial.jpg", caption: "Job tracker tour, about 4 minutes, with a voiceover, subtitles and background music." },
       { text: "Watch it any time with **Watch the tour** at the top of every page. New here? Home shows it too, above the first steps." },
     ] },
   { id: "start", title: "Start Job tracker",
@@ -5085,7 +5085,7 @@ const STATIC_GUIDE = [
     steps: [
       { text: "Open the Job tracker site in your browser. **Chrome** and **Edge** work best: they can save your files straight into a folder on your computer." },
       { text: "Bookmark the page and use the same browser each time. Your resume, job tracker file and documents are kept in that browser, so another browser starts empty." },
-      { text: "On a fresh start, **Home** offers the five-minute tour and shows three steps: **upload your resume**, **search for jobs** to create your job tracker file, then **see your applications**. Each step gets a tick when it's done.", img: "st-01-home-fresh.jpg", caption: "A fresh start: three steps on Home." },
+      { text: "On a fresh start, **Home** offers the four-minute tour and shows three steps: **upload your resume**, **search for jobs** to create your job tracker file, then **see your applications**. Each step gets a tick when it's done.", img: "st-01-home-fresh.jpg", caption: "A fresh start: three steps on Home." },
       { text: "Under the tabs, **Resume** and **Job tracker file** show what's in use, with a green dot. Click either one to change it.", img: "st-11-home.jpg", caption: "Home with a resume and a job tracker file in use." },
     ] },
   { id: "mode", title: "Choose how Job tracker uses AI",
@@ -6416,14 +6416,14 @@ function effectiveTheme() {
 }
 const SUN = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1.05 1.05M11.35 11.35l1.05 1.05M3.6 12.4l1.05-1.05M11.35 4.65l1.05-1.05"/></svg>';
 const PLAY = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><path d="M6.6 5.5v5l4-2.5z" fill="currentColor"/></svg>';
-/* The five-minute tour (guide/tutorial.mp4) in a player of its own: from the header, the Home card and the guide. */
+/* The four-minute tour (guide/tutorial.mp4) in a player of its own: from the header, the Home card and the guide. */
 function openTour() {
   let d = $("tourDlg");
   if (!d) {
-    document.body.insertAdjacentHTML("beforeend", `<dialog id="tourDlg" aria-labelledby="tourTitle"><div class="tourhead"><h2 id="tourTitle">Job tracker in five minutes</h2>
+    document.body.insertAdjacentHTML("beforeend", `<dialog id="tourDlg" aria-labelledby="tourTitle"><div class="tourhead"><h2 id="tourTitle">Job tracker in four minutes</h2>
       <button class="btn small" type="button" id="tourClose">Close</button></div>
-      <video id="tourVid" controls playsinline preload="none" poster="guide/tutorial.jpg" src="guide/tutorial.mp4" aria-label="Job tracker tour, with captions and background music"></video>
-      <p class="note">Every feature, with a made-up sample resume and free ChatGPT. The captions are in the picture; turn the music down with the player's volume.</p></dialog>`);
+      <video id="tourVid" controls playsinline preload="none" poster="guide/tutorial.jpg" src="guide/tutorial.mp4" aria-label="Job tracker tour, with a voiceover, subtitles and background music"></video>
+      <p class="note">Every feature, with a made-up sample resume and a free AI chat. The subtitles are in the picture.</p></dialog>`);
     d = $("tourDlg");
     $("tourClose").onclick = () => d.close();
     d.addEventListener("close", () => $("tourVid").pause());
@@ -6480,7 +6480,7 @@ function setupLook() {
   }
   const guideBtn = $("guideBtn");
   if (guideBtn && !guideBtn.dataset.renamed) { guideBtn.dataset.renamed = "1"; guideBtn.textContent = "How to use"; }
-  if (guideBtn && !$("tourBtn")) guideBtn.insertAdjacentHTML("beforebegin", `<button class="btn" id="tourBtn" type="button" data-act="tour" title="Watch the five-minute tour">${PLAY}Watch the tour</button>`);
+  if (guideBtn && !$("tourBtn")) guideBtn.insertAdjacentHTML("beforebegin", `<button class="btn" id="tourBtn" type="button" data-act="tour" title="Watch the four-minute tour">${PLAY}Watch the tour</button>`);
   const bar = document.querySelector(".topbar");
   const barH = () => document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px");
   if (bar) barH();
@@ -8511,9 +8511,9 @@ function renderHome(){
     ${step(2,hasJobs,"Search for jobs",hasJobs?`Your tracker has ${all.length} ${all.length===1?"listing":"listings"}.`:"Find jobs looks for roles that fit you, and the results become your tracker.",`<button class="btn small${hasResume&&!hasJobs?" primary":" ghost"}" type="button" data-go="search">Find jobs</button>`)}
     ${step(3,false,"See your applications","Every role you add lands in Applications, ready to apply and track.",`<button class="btn small${hasJobs?" primary":" ghost"}" type="button" data-go="tracker">Applications</button>`)}
   </ol></section>`;
-  // new here: the five-minute tour, above the steps (the header's Watch the tour button plays it any time)
-  const tour=hasResume&&hasJobs?"":`<section class="panel htour"><button type="button" class="htourpic" data-act="tour" aria-label="Play the five-minute tour"><img src="guide/tutorial.jpg" alt=""><span class="htourplay" aria-hidden="true"></span></button>
-    <div><h3>New here? Watch the five-minute tour</h3><p class="note">Every feature with a sample resume and free ChatGPT: find jobs, tailor an ATS-ready resume, write a cover letter and prepare for the interview.</p>
+  // new here: the four-minute tour, above the steps (the header's Watch the tour button plays it any time)
+  const tour=hasResume&&hasJobs?"":`<section class="panel htour"><button type="button" class="htourpic" data-act="tour" aria-label="Play the four-minute tour"><img src="guide/tutorial.jpg" alt=""><span class="htourplay" aria-hidden="true"></span></button>
+    <div><h3>New here? Watch the four-minute tour</h3><p class="note">Every feature with a sample resume and a free AI chat: find jobs, tailor an ATS-ready resume, write a cover letter and prepare for the interview.</p>
     <button class="btn primary small" type="button" data-act="tour">Watch the tour</button></div></section>`;
   el.innerHTML=`${tour}${steps}
   <div class="doors">
