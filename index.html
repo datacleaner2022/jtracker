@@ -2060,6 +2060,77 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
 .prep-empty > .note{margin:0;font-size:14.5px}
 .prep-empty .peek{justify-content:center;margin:18px 0 22px;max-width:560px}
 .prep-empty .peek span{font-size:12.5px;padding:4px 11px}
+/* Resume tab: your resume and Generate an ATS-proof resume side by side, with a drop zone for any resume file */
+.rsgrid .rsfile{grid-column:auto}
+.rsstart > .empty-brief{grid-column:auto;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rsatsgen{display:flex;flex-direction:column;gap:12px}
+.rsatsgen h3{display:flex;align-items:center;gap:8px;margin:0}
+.rsatsgen > .note{margin:0}
+.rsatsgen > .btn{align-self:flex-start}
+.dropzone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:22px 16px;
+  text-align:center;cursor:pointer;border:1.5px dashed var(--accent-line);border-radius:var(--radius-sm);background:var(--accent-soft);
+  transition:border-color .15s,background .15s,transform .15s}
+.dropzone:hover,.dropzone:focus-visible,.dropzone.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 20%,transparent)}
+.dropzone.over{transform:scale(1.01)}
+.dropzone .dz-ic{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;color:#fff;
+  background:linear-gradient(115deg,var(--accent-fill,var(--accent)),#c026d3)}
+.dropzone .dz-ic .ic{width:20px;height:20px}
+.dropzone b{font-size:15px;color:var(--text)}
+.dropzone .note{margin:0;font-size:12.5px}
+.dropzone u{color:var(--accent);text-underline-offset:2px}
+.dropzone.busy{cursor:progress;border-style:solid}
+.dropzone.busy .dz-ic{animation:dzpulse 1.2s ease-in-out infinite}
+@keyframes dzpulse{50%{opacity:.5;transform:scale(.92)}}
+:root[data-motion="reduce"] .dropzone.busy .dz-ic{animation:none}
+/* Resume tab: three tabs (My resume, Saved documents, Examples); the grid shows the open tab's panels */
+.rstabs{display:flex;gap:4px;margin:4px 0 16px;border-bottom:1px solid var(--line)}
+.rstabs button{display:flex;align-items:center;gap:7px;padding:10px 14px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;
+  background:none;color:var(--muted);font:inherit;font-weight:600;cursor:pointer}
+.rstabs button:hover{color:var(--text)}
+.rstabs button[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.rstabs .rscount{font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--surface-2);color:var(--muted)}
+.rstabs .rscount:empty{display:none}
+.rsgrid[data-tab] > [data-rstab]{display:none}
+.rsgrid[data-tab="mine"] > [data-rstab="mine"],.rsgrid[data-tab="docs"] > [data-rstab="docs"],.rsgrid[data-tab="examples"] > [data-rstab="examples"]{display:revert}
+.rsgrid[data-tab="mine"] > .rsatsgen{display:flex}
+.rsgrid[data-tab="examples"] > .rsexamples{grid-column:1/-1}
+.rsgrid[data-tab="docs"] > .rspanel.rsempty{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;align-self:start}
+.rsatsgen .dropzone{max-height:240px}
+.rsgrid > .rspanel.rsempty h3,.rsgrid > .rspanel.rsempty .note{margin:0}
+body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved documents says the same */
+/* Resume card: sections and skills as chips, the text Job tracker reads behind a link */
+.rsfacts{display:grid;gap:12px;margin:0 0 12px}
+.rslabel{display:block;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.rsfacts .note{margin:6px 0 0;font-size:12.5px}
+.rsfile details.rstext{margin:0 0 10px;font-size:13px}
+.rsfile details.rstext summary{cursor:pointer;color:var(--accent);font-weight:600}
+.rsfile details.rstext pre{max-height:260px;overflow:auto;white-space:pre-wrap;font-size:12px;padding:10px;border-radius:var(--radius-sm);background:var(--surface-2)}
+/* Resume card: the file name, and the ATS check score with Fix it */
+.rsname{margin:-4px 0 12px;font-weight:600;color:var(--text);overflow-wrap:anywhere}
+.rsscore{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px 14px;margin:0 0 16px;padding:12px 14px;  /* accent until every check passes, then green */
+  border:1px solid var(--accent-line);border-radius:var(--radius-sm);background:var(--accent-soft)}
+.rsscore.good{border-color:color-mix(in srgb,var(--ok) 40%,var(--line));background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.rsscore > .note{grid-column:1/-1;margin:0}
+.rsbar{grid-column:1/-1;height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.rsbar i{display:block;height:100%;border-radius:inherit;background:var(--accent)}
+.rsscore.good .rsbar i{background:var(--ok)}
+.rsscore-t{display:flex;flex-direction:column;gap:2px}
+.rsscore-t .note{margin:0;font-size:12.5px}
+/* ATS card: steps while it works, and the ready banner with before → after */
+.dzsteps{display:none;list-style:none;margin:8px 0 0;padding:0;gap:6px}
+.dropzone.busy .dzsteps{display:flex}
+.dropzone.busy .dz-hint{display:none}
+.dzsteps li{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.dzsteps li.now{border-color:var(--accent);color:var(--text);background:var(--accent-soft)}
+.dzsteps li.done{color:var(--ok-text);border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
+.dzsteps li.done::before{content:"✓ "}
+.rsready{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:var(--radius-sm);
+  border:1px solid color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.rsready > div{display:flex;flex-direction:column;gap:2px}
+.rsready b{display:flex;align-items:center;gap:6px;color:var(--text)}
+.rsready .ic{color:var(--ok-text)}
+.rsready .note{margin:0;font-size:12.5px}
+.rsready .note b{display:inline;color:var(--ok-text)}
 /* Every page uses the same wide layout; on Applications the list is narrower so the job details get most of the room */
 @media (min-width:881px){
   .wrap,header.top{max-width:1480px}
@@ -5552,13 +5623,15 @@ async function apiResumeUpload(req) {
   try { bytes = b64ToBytes(String(b.data || "")); } catch (e) { throw new ApiError("That file couldn't be read. Try choosing it again."); }
   if (!bytes.length || bytes.length > 8 * 1024 * 1024) throw new ApiError("Choose a resume file under 8 MB.");
   const { text, style } = await resumeText(base, bytes.buffer);
-  const rs = await resumeList();
+  const rs = await resumeList(), s = await settings(), was = rs.length ? findResume(rs, s.resume_file) : null;
   const file = uniqueName(new Set(rs.map(r => r.file.toLowerCase())), safeName(base.slice(0, base.length - ext.length), 80) + ext);
   rs.push({ file, kb: Math.max(1, Math.round(bytes.length / 1024)), mtime: Date.now(), text, style });
   await kv.set("resumes", rs);
-  await saveSettings(Object.assign(clone(await settings()), { resume_file: file }));
+  // use: false (Generate an ATS-proof resume) keeps the resume in use; the first resume is always used
+  if (b.use !== false || !was) await saveSettings(Object.assign(clone(s), { resume_file: file }));
+  else if (!s.resume_file) await saveSettings(Object.assign(clone(s), { resume_file: was.file }));
   await bump();
-  return { resume: await resumeInfo(), resumes: listResumes(rs) };
+  return { file, resume: await resumeInfo(), resumes: listResumes(rs) };
 }
 async function apiResumeSelect(req) {
   const file = String(req.body.file || ""), jid = req.body.id;
@@ -5574,12 +5647,12 @@ async function apiResumeSelect(req) {
   return { ok: true, resume: await resumeInfo() };
 }
 
-/* An ATS version of the resume in use (Resume tab, Make an ATS version): mode "prompt" gives the prompt for a chat website
+/* An ATS version of the resume in use, or of a file dropped on Generate an ATS-proof resume (Resume tab): mode "prompt" gives the prompt for a chat website
    (personal details as placeholders, restored in the page), "write" has the local model write it, "check" runs the ATS
    check on it, and "save" makes its Word file and PDF (in the look of the original) and adds it to your resumes, where
    it can be picked for drafting. It's aimed at the roles in Find jobs when there are some. */
 async function apiResumeAts(req) {
-  const b = req.body, mode = b.mode, s = await settings(), source = await readResume(s.resume_file);
+  const b = req.body, mode = b.mode, s = await settings(), source = await readResume(b.file || s.resume_file);   // file: one dropped on Generate an ATS-proof resume
   const crit = ((await kv.get("search")) || {}).criteria || {}, target = splitRoles(crit.roles).slice(0, MAX_ROLES).join(" or ");
   if (mode === "prompt") {
     const red = redact(source.text, source.file);
@@ -5589,7 +5662,7 @@ async function apiResumeAts(req) {
     if (!isConfigured(s) || isManual(s)) throw new ApiError("Writing with a model isn't set up. Open Settings and choose a local model, or use free chat.", 428);
     return { text: await generate(s, atsResumePrompt(source.text, target, s.about_me_extra), req.signal) };
   }
-  const text = String(b.text || "").trim();
+  const text = mode === "check" && b.original ? source.text : String(b.text || "").trim();   // original: check the resume itself
   if (!text) throw new ApiError("There's no ATS version to " + (mode === "save" ? "save" : "check") + " yet.");
   const check = atsCheck(text, { role: "" }, source.text);
   if (mode === "check") return check;
@@ -5605,10 +5678,10 @@ async function apiResumeAts(req) {
   const relD = await putFile(folder, stem + ".docx", docx, DOCX_MIME, meta), relP = await putFile(folder, stem + ".pdf", pdf, "application/pdf", meta);
   // one of your resumes too, so drafts can start from it; the one in use stays the same until you pick this one (with
   // Automatic, the newest Word file would win, so the one in use is picked for you first)
-  const rs = await resumeList(), file = uniqueName(new Set(rs.map(r => r.file.toLowerCase())), stem + ".docx");
+  const rs = await resumeList(), file = uniqueName(new Set(rs.map(r => r.file.toLowerCase())), stem + ".docx"), inUse = findResume(rs, "");
   rs.push({ file, kb: Math.max(1, Math.round(docx.size / 1024)), mtime: Date.now(), text, style: source.style || null });
   await kv.set("resumes", rs);
-  if (!s.resume_file) await saveSettings(Object.assign(clone(s), { resume_file: source.file }));
+  if (!s.resume_file && inUse) await saveSettings(Object.assign(clone(s), { resume_file: inUse.file }));
   await bump();
   return { file, docx: fileInfo(relD, docx), pdf: fileInfo(relP, pdf), check, resumes: listResumes(rs) };
 }
@@ -6340,12 +6413,12 @@ async function updateGreeting() {
 const PLUS = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
 function buildResumeTop(root) {
   const grid = root.querySelector(".rsgrid"), top = grid && grid.querySelector(".rsfile");
-  const empty = !grid && root.querySelector(".empty-brief");
+  const empty = root.querySelector(".rsstart > .empty-brief") || (!grid && root.querySelector(".empty-brief"));
   if (empty && !root.querySelector(".rsexamples")) {   // no resume yet: the examples help most now
     const examples = document.createElement("section");
     examples.className = "panel rspanel rsdocs rsexamples";
     examples.style.marginTop = "16px";
-    empty.after(examples);
+    (empty.closest(".rsstart") || empty).after(examples);
     fillExamples(examples);
   }
   if (!top || grid.dataset.top) return;
@@ -6360,6 +6433,7 @@ function buildResumeTop(root) {
   const tools = document.createElement("div");
   tools.className = "rstools";
   if (radios.length) {
+    const nm = top.querySelector(".rsname"); if (nm) nm.remove();   // the dropdown shows the file name
     const label = r => { const b = r.closest("label").querySelector("b"); return r.value ? b.textContent : "Automatic (best match in the folder)"; };
     tools.innerHTML = `<label class="rsuse"><span>Resume</span><select aria-label="Which resume to use">${radios.map(r => `<option value="${esc(r.value)}"${r.checked ? " selected" : ""}>${esc(label(r))}</option>`).join("")}</select></label>`;
     tools.querySelector("select").onchange = e => {
@@ -6374,8 +6448,8 @@ function buildResumeTop(root) {
     for (const id of ["#rsAts", "#rsFolder"]) { const b = old.querySelector(id); if (b) tools.insertBefore(b, tools.lastChild); }
     old.remove();
   }
-  const docs = [["resume", "Custom resumes", "Resumes tailored to a job posting, and ATS versions of your resume, appear here once you save them. Open a job in Applications and use Craft resume, or use Make an ATS version above."],
-    ["letter", "Cover letters", "Cover letters appear here once you save them. Open a job in Applications and write one from the Cover letter section."]]
+  const docs = [["resume", "Custom resumes", "None yet · Craft one from a job, or generate an ATS-proof resume."],
+    ["letter", "Cover letters", "None yet · Write one from a job in Applications."]]
     .map(([kind, title, empty]) => {
       const box = document.createElement("section");
       box.className = "panel rspanel rsdocs";
@@ -6384,7 +6458,9 @@ function buildResumeTop(root) {
     });
   const folderBox = document.createElement("section");
   folderBox.className = "panel rspanel rsfolder";
-  top.after(folderBox);
+  const gen = grid.querySelector(".rsatsgen");   // Generate an ATS-proof resume sits beside the resume card
+  if (gen) top.after(gen);
+  (gen || top).after(folderBox);
   fillFolder(folderBox).catch(() => folderBox.remove());
   let at = folderBox;
   docs.forEach(([, box]) => { at.after(box); at = box; });
@@ -6392,7 +6468,31 @@ function buildResumeTop(root) {
   examples.className = "panel rspanel rsdocs rsexamples";
   at.after(examples);
   fillExamples(examples);
-  savedDocs().then(all => docs.forEach(([kind, box, empty]) => fillDocs(box, all.filter(d => d.kind === kind), empty))).catch(() => docs.forEach(([, box]) => box.remove()));
+  savedDocs().then(all => {
+    docs.forEach(([kind, box, empty]) => fillDocs(box, all.filter(d => d.kind === kind), empty));
+    const n = all.filter(d => d.kind === "resume" || d.kind === "letter").length, c = grid.parentElement.querySelector('[data-rstab="docs"] .rscount');
+    if (c) c.textContent = n ? String(n) : "";
+  }).catch(() => docs.forEach(([, box]) => box.remove()));
+  resumeTabs(grid, [[top, "mine"], [gen, "mine"], [grid.querySelector("#rsAtsPanel"), "mine"], [grid.querySelector(".rscover"), "mine"],
+    [folderBox, "docs"], ...docs.map(([, box]) => [box, "docs"]), [examples, "examples"]]);
+}
+/* The Resume tab's three tabs: My resume, Saved documents and Examples. Each panel is tagged with its tab, and the grid
+   shows one tab's panels at a time. RSTAB remembers the open tab while the page redraws. */
+let RSTAB = "mine";
+function resumeTabs(grid, panels) {
+  for (const [p, t] of panels) if (p) p.dataset.rstab = t;
+  const bar = document.createElement("div");
+  bar.className = "rstabs"; bar.setAttribute("role", "tablist"); bar.setAttribute("aria-label", "Resume sections");
+  bar.innerHTML = [["mine", "My resume"], ["docs", "Saved documents"], ["examples", "Examples"]].map(([k, l]) =>
+    `<button type="button" role="tab" data-rstab="${k}" aria-selected="${RSTAB === k}">${l}${k === "docs" ? '<span class="rscount"></span>' : k === "examples" ? `<span class="rscount">${EXAMPLE_RESUMES.length}</span>` : ""}</button>`).join("");
+  grid.before(bar);
+  const show = k => { RSTAB = k; grid.dataset.tab = k; bar.querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", b.dataset.rstab === k)); };
+  bar.querySelectorAll("button").forEach(b => b.onclick = () => show(b.dataset.rstab));
+  bar.onkeydown = e => {
+    const keys = ["mine", "docs", "examples"], i = keys.indexOf(RSTAB), d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (d) { e.preventDefault(); show(keys[(i + d + 3) % 3]); bar.querySelector(`[data-rstab="${RSTAB}"]`).focus(); }
+  };
+  show(RSTAB);
 }
 
 /* ---------- the job tracker file: what this edition calls the tracker ----------
@@ -6681,7 +6781,7 @@ async function fillFolder(box) {
   box.innerHTML = h
     ? `<div class="rsfrow"><div><b>${FOLDER}Saving to the “${esc(h.name)}” folder</b><span class="note">Your job tracker files, custom resumes and cover letters are saved there, in the Job tracker files, Custom resumes and Cover letters folders. Resumes and letters come as a Word file and a PDF. A copy also stays in this browser.${wait}</span></div>
       <div class="rsdbtn">${pending ? `<button class="btn small primary" type="button" data-fa="flush">Save them now</button>` : ""}<button class="btn small" type="button" data-fa="pick">Change folder</button><button class="btn small ghost" type="button" data-fa="stop">Stop saving there</button></div></div>`
-    : `<div class="rsfrow"><div><b>${FOLDER}Save your files to a folder</b><span class="note">Right now your tracker, custom resumes and cover letters are kept in this browser. Choose a folder on your computer, for example Documents\\Job tracker, and they’re saved there too, each kind in its own folder.</span></div>
+    : `<div class="rsfrow"><div><b>${FOLDER}Save your files to a folder</b><span class="note">Your files are kept in this browser. Choose a folder to save them on your computer too.</span></div>
       <div class="rsdbtn"><button class="btn small primary" type="button" data-fa="pick">Choose folder</button></div></div>`;
   const done = async () => { await bump(); refreshPage(); };
   box.querySelectorAll("[data-fa]").forEach(b => b.onclick = async () => {
@@ -6742,7 +6842,8 @@ async function savedDocs() {
 }
 function fillDocs(box, list, empty) {
   const title = box.querySelector("h3").textContent;
-  if (!list.length) { box.innerHTML = `<h3>${esc(title)}</h3><p class="note">${esc(empty)}</p>`; return; }
+  if (!list.length) { box.classList.add("rsempty"); box.innerHTML = `<h3>${esc(title)}</h3><p class="note">${esc(empty)}</p>`; return; }   // one compact line
+  box.classList.remove("rsempty");
   box.innerHTML = `<h3>${esc(title)} <span class="rscount">${list.length}</span></h3><ul class="rsdlist">` + list.map((d, i) =>
     `<li><div class="rsdname"><b title="${esc(d.name)}">${esc(d.name)}</b><span>${esc(d.role && d.company ? `${d.role}, ${d.company}` : d.folder)}. Saved ${esc(when(d.at))}${d.inFolder ? ", also in your folder" : ""}</span></div>`
     + `<div class="rsdbtn">${d.pdf ? `<button class="btn small" type="button" data-i="${i}" data-f="pdf">PDF</button>` : ""}${d.docx ? `<button class="btn small" type="button" data-i="${i}" data-f="docx">Word</button>` : ""}</div></li>`).join("") + `</ul>`;
@@ -6778,9 +6879,9 @@ function fillExamples(box) {
   const saveAs = (e, ext) => `Example ATS Resume - ${e.title} - ${e.person}.${ext}`;
   const checkText = c => `ATS check: ${c.passed} of ${c.total}${c.pct != null ? `, ${c.pct}% of keywords` : ""}`;
   box.innerHTML = `<h3>Example ATS resumes <span class="rscount">${EXAMPLE_RESUMES.length}</span></h3>
-    <p class="note" style="margin:0 0 10px">Made-up people, laid out the way Craft resume lays yours out: one column, standard headings and the posting's keywords. Each passes the ATS check for the posting it was written for.</p>
+    <p class="note" style="margin:0 0 10px">Made-up people, laid out the way Craft resume lays yours out. Each one passes every ATS check and has all of its posting's keywords.</p>
     <ul class="rsdlist">` + EXAMPLE_RESUMES.map((e, i) =>
-      `<li><div class="rsdname"><b>${esc(e.title)}</b><span>${esc(e.about)} ${checkText(e.check)}.</span></div>`
+      `<li><div class="rsdname"><b>${esc(e.title)}</b><span>${esc(e.about)}</span></div>`
       + `<div class="rsdbtn"><button class="btn small" type="button" data-i="${i}" data-f="view">Preview</button>`
       + `<a class="btn small" href="${url(e, "pdf")}" download="${esc(saveAs(e, "pdf"))}">PDF</a>`
       + `<a class="btn small" href="${url(e, "docx")}" download="${esc(saveAs(e, "docx"))}">Word</a></div></li>`).join("") + `</ul>`;
@@ -7505,7 +7606,7 @@ function renderResume(){
   const el=$("resumepage");if(!el||VIEW!=="resume")return;
   const r=S.resume||{},head=`<div class="vhead"><h2>Your resume</h2><p>The resume Job tracker tailors for each application. Your original file is never changed.</p></div>`;
   const up=(label,cls)=>`<button class="btn${cls?" "+cls:""}" type="button" data-act="upload-resume">${icon("plus")}${label}</button>`;
-  if(!r.ok){el.innerHTML=head+`<div class="empty-brief"><h3>No resume yet</h3><p class="note" style="margin:0 0 16px;max-width:60ch">Upload the resume you send to employers. A Word file works best; a text-based PDF, .odt, .rtf, .txt or .md file also works. Job tracker reads it to tailor resumes and cover letters, and to show how well you match each listing.</p>${up("Upload resume","primary")}</div>`;return}
+  if(!r.ok){el.innerHTML=head+`<div class="rsgrid rsstart"><div class="empty-brief"><h3>No resume yet</h3><p class="note" style="margin:0 0 16px;max-width:60ch">Upload the resume you send to employers. A Word file works best; a text-based PDF, .odt, .rtf, .txt or .md file also works. Job tracker reads it to tailor resumes and cover letters, and to show how well you match each listing.</p>${up("Upload resume","primary")}</div>${atsGenCard()}</div>${atsPanel()}`;bindAtsGen();bindAtsPanel();return}
   const meta=(S.resumes||[]).find(x=>x.file===r.file),secs=r.sections||[],skills=r.skills||[];
   const usual=[["Summary",/SUMMARY|PROFILE|OBJECTIVE|ABOUT/],["Skills",/SKILL|TECHNOLOG|COMPETENC/],["Experience",/EXPERIENCE|EMPLOYMENT|WORK HISTORY|CAREER/],["Education",/EDUCATION|TRAINING|CERTIF/]];
   const absent=usual.filter(([,rx])=>!secs.some(s=>rx.test(s.toUpperCase()))).map(([n])=>n);
@@ -7515,29 +7616,31 @@ function renderResume(){
   const top=Object.entries(gaps).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,10);
   const chips=(list,cls)=>`<div class="rchips${cls?" "+cls:""}">${list.map(x=>`<span>${x}</span>`).join("")}</div>`;
   const where=(S.folders||{}).resume||"",onDisk=/[\\/]/.test(where);
-  el.innerHTML=head+`<div class="rsgrid">
-    <section class="panel rspanel rsfile"><h3>${icon("file")}${esc(r.file)}</h3>
-      <div class="rsstats"><div><b>${(r.words||0).toLocaleString()}</b><span>words</span></div><div><b>${secs.length}</b><span>${secs.length===1?"section":"sections"}</span></div><div><b>${skills.length}</b><span>skills found</span></div>${meta?`<div><b>${meta.kb}</b><span>KB</span></div>`:""}</div>
-      <p class="rswhere"><span class="note">Saved in</span><code>${esc(where||"Your resume folder")}</code></p>
-      <div class="row2"><button class="btn primary" type="button" id="rsAts" title="Rewrites this resume, whatever its layout, as one plain column with standard headings that applicant tracking systems read well. Your facts stay the same.">Make an ATS version</button>${up("Upload a new one")}${onDisk?`<button class="btn ghost" type="button" id="rsFolder">${icon("folder")}Open resume folder</button>`:""}</div></section>
+  el.innerHTML=`<div class="rsgrid">
+    <section class="panel rspanel rsfile"><h3>${icon("file")}Your resume</h3>
+      <p class="rsname">${esc(r.file)}</p>
+      <div class="rsscore" id="rsScore" aria-live="polite"><span class="note">Checking how hiring systems read it…</span></div>
+      <div class="rsfacts">
+        <div><span class="rslabel">Sections</span>${secs.length?chips(secs.map(esc)):`<p class="note">No headings found. Put SUMMARY, SKILLS, EXPERIENCE and EDUCATION each on its own line.</p>`}
+          ${secs.length&&absent.length?`<p class="note">Most resumes also have: ${absent.join(", ")}.</p>`:""}</div>
+        <div><span class="rslabel">${skills.length} ${skills.length===1?"skill":"skills"} found</span>${skills.length?chips(skills.map(esc)):""}
+          ${skills.length<5?`<p class="note">Missing skills? List your tools in a SKILLS section, or generate an ATS-proof resume.</p>`:""}</div>
+      </div>
+      <details class="rstext"><summary>View the text Job tracker reads</summary><p class="note">If it looks jumbled here, drafts will be too. Generate an ATS-proof resume puts it back in order.</p><pre>${esc(r.text||"")}</pre></details>
+      <p class="rswhere note">${onDisk?`Saved in <code>${esc(where)}</code>`:esc(where||"Kept in this browser")}</p>
+      <div class="row2">${up("Upload a new one")}${onDisk?`<button class="btn ghost" type="button" id="rsFolder">${icon("folder")}Open resume folder</button>`:""}</div></section>
+    ${atsGenCard()}
     ${atsPanel()}
-    <section class="panel rspanel"><h3>How it covers your listings</h3>
-      ${scored.length?`<div class="rsstats"><div><b>${avg}%</b><span>average skills match</span></div><div><b>${strong}</b><span>of ${scored.length} listings at 70% or more</span></div></div>
-      ${top.length?`<p class="note">Skills your listings ask for that your resume doesn’t mention. If you have any of them, add them to your resume so drafts can use them.</p>${chips(top.map(([s,n])=>`${esc(s)} <em>${n}</em>`),"rsgaps")}`:`<p class="note">Your resume mentions every skill your listings ask for.</p>`}`
-      :`<p class="note">Once your tracker has listings, this shows how well your resume covers the skills they ask for.</p><button class="btn small" type="button" data-go="search">Find jobs</button>`}</section>
+    ${scored.length?`<section class="panel rspanel rscover"><h3>How it covers your listings</h3>
+      <div class="rsstats"><div><b>${avg}%</b><span>average skills match</span></div><div><b>${strong}</b><span>of ${scored.length} listings at 70% or more</span></div></div>
+      ${top.length?`<p class="note">Skills your listings ask for that your resume doesn’t mention. If you have any of them, add them to your resume so drafts can use them.</p>${chips(top.map(([s,n])=>`${esc(s)} <em>${n}</em>`),"rsgaps")}`:`<p class="note">Your resume mentions every skill your listings ask for.</p>`}</section>`:""}
     ${resumeChooser(r)}
-    <section class="panel rspanel"><h3>Sections</h3>
-      ${secs.length?chips(secs.map(esc)):`<p class="note">No section headings found. Put each heading on its own line (SUMMARY, SKILLS, EXPERIENCE, EDUCATION) so drafts keep your layout.</p>`}
-      ${secs.length&&absent.length?`<p class="note">Most resumes also have: ${absent.join(", ")}.</p>`:""}</section>
-    <section class="panel rspanel"><h3>Skills Job tracker recognises</h3>
-      ${skills.length?chips(skills.map(esc)):`<p class="note">None of the skills Job tracker knows were found. Listing your tools and languages in a SKILLS section helps the match.</p>`}
-      <p class="note">These are what the skills match on each listing compares against.</p></section>
-    <details class="panel rspanel rstext"><summary>The text Job tracker reads</summary><p class="note">If something looks jumbled here, drafts will be too. Make an ATS version puts it back in order, or save your resume as a simple Word file.</p><pre>${esc(r.text||"")}</pre></details>
   </div>`;
   el.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go));
   if($("rsFolder"))$("rsFolder").onclick=()=>openPath({what:"resume"});
-  $("rsAts").onclick=()=>makeAtsResume($("rsAts"));
-  bindAtsPanel();
+  if($("rsAts"))$("rsAts").onclick=()=>makeAtsResume($("rsAts"));
+  fillAtsScore();
+  bindAtsGen();bindAtsPanel();
   el.querySelectorAll("input[name=rspick]").forEach(x=>x.onchange=async()=>{
     try{await api("/api/resume/select",{file:x.value});await loadState();renderResume();toast(x.value?`Using ${x.value}.`:"Picking the resume automatically.")}
     catch(e){toast(e.message);renderResume()}
@@ -7546,27 +7649,101 @@ function renderResume(){
 /* ---------- Resume: an ATS version of the resume in use, from whatever layout it came in ----------
 ATSDRAFT is the version being looked at: {text, notes, saved}. It stays while the page redraws, until it's discarded. */
 let ATSDRAFT=null,atsCheckSeq=0;
-async function makeAtsResume(btn){
+/* file: a resume dropped on Generate an ATS-proof resume; without it, the resume in use. btn shows "Writing it…" when
+   it's a button; the drop zone shows its own progress. */
+async function makeAtsResume(btn,file){
   if(!S.aiReady){toast("Set up drafting in Settings first.");openSettings();return}
-  const label=btn.textContent;btn.disabled=true;
+  const isBtn=btn.tagName==="BUTTON",label=btn.innerHTML;if(isBtn)btn.disabled=true;
   try{
-    let reply;
+    let reply,before=null;
+    try{before=await atsScore(file||(S.resume||{}).file)}catch(e){}   // for the before → after on the card
     if(isManual()){
-      const p=await api("/api/resume/ats",{mode:"prompt"});
+      const p=await api("/api/resume/ats",{mode:"prompt",file});
       reply=(await askChat({title:"Ask your chat for an ATS version of your resume",prompt:p.prompt,restore:p.restore,useLabel:"Use this resume"})).text;
-    }else{btn.textContent="Writing it…";reply=(await api("/api/resume/ats",{mode:"write"})).text}
+    }else{if(isBtn)btn.textContent="Writing it…";reply=(await api("/api/resume/ats",{mode:"write",file})).text}
     const i=reply.indexOf(NOTES_MARK);
     const text=repairResume((i>=0?reply.slice(0,i):reply).trim());
     if(!text){toast("The reply was empty. Try again.");return}
-    ATSDRAFT={text,notes:i>=0?reply.slice(i+NOTES_MARK.length).trim():"",saved:null};
+    ATSDRAFT={text,notes:i>=0?reply.slice(i+NOTES_MARK.length).trim():"",saved:null,from:file||(S.resume||{}).file||"",before};
     renderResume();
     const p=$("rsAtsPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){if(e.name!=="AbortError")toast(e.message||"That didn’t work. Try again.")}
-  finally{if(document.body.contains(btn)){btn.disabled=false;btn.textContent=label}}
+  finally{if(isBtn&&document.body.contains(btn)){btn.disabled=false;btn.innerHTML=label}}
+}
+/* How the resume in use does on the ATS check, on its card, with Fix it when something fails */
+const atsScore=(file)=>api("/api/resume/ats",{mode:"check",original:true,file});
+async function fillAtsScore(){
+  const el=$("rsScore");if(!el)return;
+  let r;try{r=await atsScore((S.resume||{}).file)}catch(e){el.remove();return}
+  if(!document.body.contains(el))return;
+  const all=r.passed===r.total,pct=Math.round(r.passed/Math.max(1,r.total)*100);
+  el.className="rsscore"+(all?" good":"");
+  el.innerHTML=`<div class="rsbar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+    <div class="rsscore-t"><b>ATS check: ${r.passed} of ${r.total}</b><span class="note">${all?"Hiring systems read it well.":`${r.total-r.passed} ${r.total-r.passed===1?"thing":"things"} to fix`}</span></div>
+    ${all?"":`<button class="btn small" type="button" id="rsFix">Fix it →</button>`}`;
+  if($("rsFix"))$("rsFix").onclick=()=>{const b=$("rsAts");if(b){b.scrollIntoView({behavior:"smooth",block:"center"});b.click()}};
+}
+async function fileB64(f){
+  const bytes=new Uint8Array(await f.arrayBuffer());let bin="";
+  for(let i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+  return btoa(bin);
+}
+/* Generate an ATS-proof resume: drop or choose any resume, and it comes back as one clean column with standard headings,
+   ready to save as Word and PDF. The dropped file joins your resumes but doesn't replace the one in use. */
+function atsGenCard(){
+  return `<section class="panel rspanel rsatsgen"><h3>${icon("sparkle")}Generate an ATS-proof resume</h3>
+    <p class="note">Drop any resume and get a clean Word and PDF version that hiring systems read correctly.</p>
+    ${ATSDRAFT?`<div class="rsready"><div><b>${icon("check")}Your ATS resume is ready</b><span class="note" id="rsReadyScore">${ATSDRAFT.before?`ATS check: ${ATSDRAFT.before.passed} of ${ATSDRAFT.before.total} before`:""}</span></div>
+      <button class="btn small primary" type="button" id="rsGoReady">See it ↓</button></div>`:""}
+    <div class="dropzone" id="rsDrop" role="button" tabindex="0" aria-label="Choose a resume to make ATS-proof">
+      <span class="dz-ic" aria-hidden="true">${icon("upload")}</span>
+      <b id="rsDropMsg">Drag your resume here</b>
+      <span class="note dz-hint">or <u>choose a file</u> · Word, PDF, .odt, .rtf, .txt or .md</span>
+      <ol class="dzsteps" aria-label="Progress"><li data-s="read">Reading</li><li data-s="write">Writing</li><li data-s="ready">Ready</li></ol>
+      <input type="file" id="rsDropFile" hidden accept=".docx,.pdf,.odt,.rtf,.txt,.md">
+    </div>
+    ${S.resume&&S.resume.ok?`<button class="btn" type="button" id="rsAts" title="Makes an ATS-proof version of ${esc(S.resume.file)}">${icon("file")}Use my current resume</button>`:""}
+  </section>`;
+}
+/* The drop zone's three steps: done ones get a tick, the current one is highlighted. ATSBUSY keeps them while the page
+   redraws (saving the upload redraws it), and showDz puts them back on the new drop zone. */
+let ATSBUSY=null;
+function dzStep(step,msg){ATSBUSY=step?{step,msg}:null;showDz()}
+function showDz(){
+  const z=$("rsDrop");if(!z)return;
+  const order=["read","write","ready"],at=ATSBUSY?order.indexOf(ATSBUSY.step):-1;
+  z.classList.toggle("busy",!!ATSBUSY);
+  $("rsDropMsg").textContent=ATSBUSY?ATSBUSY.msg:"Drag your resume here";
+  z.querySelectorAll(".dzsteps li").forEach(li=>{const i=order.indexOf(li.dataset.s);li.className=i<at?"done":i===at?"now":""});
+}
+function bindAtsGen(){
+  const z=$("rsDrop"),inp=$("rsDropFile");if(!z)return;
+  showDz();
+  const run=async f=>{
+    if(!f||ATSBUSY)return;
+    if(!S.aiReady){toast("Set up drafting in Settings first.");openSettings();return}
+    if(f.size>8*1024*1024){toast("Choose a file under 8 MB.");return}
+    dzStep("read",`Reading ${f.name}…`);
+    try{
+      const r=await api("/api/resume/upload",{name:f.name,data:await fileB64(f),use:false});
+      S.resumes=r.resumes||S.resumes;
+      if(!(S.resume&&S.resume.ok)&&r.resume&&r.resume.ok){S.resume=r.resume;showResume()}   // a first resume becomes the one in use
+      dzStep("write",isManual()?"Copy the prompt into your chat…":"Writing your ATS-proof resume…");
+      await makeAtsResume(z,r.file);
+    }catch(e){toast(e.message||"That didn’t work. Try again.")}
+    finally{dzStep(null)}
+  };
+  if($("rsGoReady"))$("rsGoReady").onclick=()=>{const p=$("rsAtsPanel");if(p)p.scrollIntoView({behavior:"smooth",block:"start"})};
+  z.onclick=()=>inp.click();
+  z.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();inp.click()}};
+  inp.onchange=()=>{const f=inp.files[0];inp.value="";run(f)};
+  z.ondragover=e=>{e.preventDefault();z.classList.add("over")};
+  z.ondragleave=()=>z.classList.remove("over");
+  z.ondrop=e=>{e.preventDefault();z.classList.remove("over");run(e.dataTransfer.files[0])};
 }
 function atsPanel(){
   const d=ATSDRAFT;if(!d)return "";
-  return `<section class="panel rspanel" id="rsAtsPanel" style="grid-column:1/-1"><h3>ATS version</h3>
+  return `<section class="panel rspanel" id="rsAtsPanel" style="grid-column:1/-1"><h3>ATS-proof version${d.from?` of ${esc(d.from)}`:""}</h3>
     <p class="note" style="margin:0 0 8px">One plain column with standard headings, made from your resume. Read it through and fix anything that’s off: the check below updates as you type.</p>
     ${d.notes?`<p class="note" style="white-space:pre-line;margin:0 0 8px">${esc(d.notes)}</p>`:""}
     <textarea id="rsAtsText" rows="18" spellcheck="true" aria-label="ATS version of your resume">${esc(d.text)}</textarea>
@@ -7581,17 +7758,19 @@ function bindAtsPanel(){
   let timer=0;
   const check=async()=>{
     const seq=++atsCheckSeq,el=$("rsAtsCheck");
-    let r;try{r=await api("/api/resume/ats",{mode:"check",text:t.value})}catch(e){return}
+    let r;try{r=await api("/api/resume/ats",{mode:"check",text:t.value,file:ATSDRAFT.from})}catch(e){return}
     if(seq!==atsCheckSeq||!el||!document.body.contains(el))return;
     el.innerHTML=atsHtml(r,"It looks at what an ATS reads: contact details, headings, job lines, dates, characters and length. Craft resume on a job adds that posting’s keywords.");
     el.classList.remove("hidden");
+    const sc=$("rsReadyScore"),b=ATSDRAFT&&ATSDRAFT.before;   // the before → after on the ATS card
+    if(sc)sc.innerHTML=b?`ATS check: ${b.passed} of ${b.total} <span aria-label="became">→</span> <b>${r.passed} of ${r.total}</b>`:`ATS check: <b>${r.passed} of ${r.total}</b>`;
   };
   t.addEventListener("input",()=>{ATSDRAFT.text=t.value;clearTimeout(timer);timer=setTimeout(check,400)});
   check();
   $("rsAtsSave").onclick=async()=>{
     const b=$("rsAtsSave");b.disabled=true;$("rsAtsOut").textContent="Saving the Word file and PDF…";
     try{
-      const r=await api("/api/resume/ats",{mode:"save",text:t.value});
+      const r=await api("/api/resume/ats",{mode:"save",text:t.value,file:ATSDRAFT.from});
       ATSDRAFT.saved=r;S.resumes=r.resumes||S.resumes;
       toast(`Saved ${r.docx.name} and ${r.pdf.name}. It’s in Custom resumes, and you can pick it for drafts.`);
       await loadState();renderResume();
@@ -7989,6 +8168,7 @@ const ICONS={
   download:'<path d="M8 2.25v8M4.75 7 8 10.25 11.25 7M2.75 13.25h10.5"/>',
   sheet:'<rect x="2.25" y="2.25" width="11.5" height="11.5" rx="2"/><path d="M2.25 6.25h11.5M6.25 6.25v7.5"/>',
   plus:'<path d="M8 3v10M3 8h10"/>',
+  upload:'<path d="M8 10.5V2.75M4.75 6 8 2.75 11.25 6M2.75 10.5v1.75a1 1 0 0 0 1 1h8.5a1 1 0 0 0 1-1V10.5"/>',
   chat:'<path d="M2.75 4.25a1.5 1.5 0 0 1 1.5-1.5h7.5a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H7l-3 2.5v-2.5h-.25a1.5 1.5 0 0 1-1.5-1.5z"/>',
   star:'<path d="m8 2.5 1.7 3.45 3.8.55-2.75 2.68.65 3.78L8 11.18l-3.4 1.78.65-3.78L2.5 6.5l3.8-.55z"/>',
   code:'<path d="m5.5 4.75-3.25 3.25 3.25 3.25M10.5 4.75l3.25 3.25-3.25 3.25"/>',
