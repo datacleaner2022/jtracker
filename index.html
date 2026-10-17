@@ -237,6 +237,8 @@ dialog h2{font:500 32px/1.1 var(--display);margin:0 0 14px}
 .chatsteps{margin:0 0 12px;padding-left:20px;color:var(--muted);font-size:14px;line-height:1.6}
 .chatsteps li{margin:2px 0}
 .chatlinks a{margin-left:8px;color:var(--amber);font-weight:600}
+.chatpick{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;margin-top:6px}
+.chatpick a{margin-left:0}
 .chatlinks select{width:auto;max-width:100%;padding:3px 6px}
 dialog#chatDlg textarea{width:100%;box-sizing:border-box}
 dialog#chatDlg label{display:block;margin:10px 0 4px}
@@ -2272,18 +2274,22 @@ body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved d
 <dialog id="chatDlg" aria-labelledby="chatTitle">
   <h2 id="chatTitle">Ask your chat</h2>
   <ol class="chatsteps">
-    <li>Copy the prompt, then open a free chat: <span class="chatlinks"><select id="chatSite" aria-label="Free AI chat">
+    <li>Copy the prompt, then open a free chat: <span class="chatlinks chatpick"><select id="chatSite" aria-label="Free AI chat">
+      <optgroup label="No login needed">
       <option value="https://chatgpt.com/">ChatGPT</option>
-      <option value="https://claude.ai/new">Claude</option>
       <option value="https://gemini.google.com/app">Gemini</option>
-      <option value="https://copilot.microsoft.com/">Microsoft Copilot</option>
       <option value="https://www.perplexity.ai/">Perplexity</option>
-      <option value="https://chat.deepseek.com/">DeepSeek</option>
-      <option value="https://chat.mistral.ai/chat">Mistral Le Chat</option>
-      <option value="https://grok.com/">Grok</option>
-      <option value="https://chat.qwen.ai/">Qwen</option>
-      <option value="https://www.kimi.com/">Kimi</option>
       <option value="https://chat.z.ai/">Z.ai (GLM)</option>
+      </optgroup>
+      <optgroup label="Free account and login needed">
+      <option value="https://claude.ai/new">Claude (login)</option>
+      <option value="https://copilot.microsoft.com/">Microsoft Copilot (login)</option>
+      <option value="https://chat.deepseek.com/">DeepSeek (login)</option>
+      <option value="https://chat.mistral.ai/chat">Mistral Le Chat (login)</option>
+      <option value="https://grok.com/">Grok (login)</option>
+      <option value="https://chat.qwen.ai/">Qwen (login)</option>
+      <option value="https://www.kimi.com/">Kimi (login)</option>
+      </optgroup>
     </select> <a id="chatOpen" href="https://chatgpt.com/" target="_blank" rel="noopener">Open</a></span>
     <span class="note hidden" id="chatAsiaNote" style="display:block;margin-top:4px">DeepSeek, Qwen, Kimi and Z.ai are run from China. Your prompt still includes your work history, so choose another chat if that worries you.</span></li>
     <li>Paste it in and send. <span id="chatWebHint"></span></li>
@@ -2292,7 +2298,7 @@ body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved d
   <p class="note hidden" id="chatPriv" style="margin:0 0 8px">Your name, email, phone, address and links were replaced with placeholders in this prompt. Job tracker puts them back when you paste the reply.</p>
   <label class="inline hidden" id="chatAltRow"><input type="checkbox" id="chatAlt" checked> <span id="chatAltLabel"></span></label>
   <label>The prompt<textarea id="chatPrompt" readonly rows="5"></textarea></label>
-  <div class="row2"><button class="btn small" type="button" id="chatCopy">Copy prompt</button><span class="note" id="chatCopied"></span></div>
+  <div class="row2"><button class="btn small primary" type="button" id="chatCopyOpen">Copy and open chat</button><button class="btn small" type="button" id="chatCopy">Copy prompt</button><span class="note" id="chatCopied"></span></div>
   <label>The chat’s reply<textarea id="chatReply" rows="8" placeholder="Paste the reply here"></textarea></label>
   <p class="note" id="chatErr" style="color:var(--red)"></p>
   <div class="row2 end"><button class="btn" type="button" id="chatCancel">Cancel</button><button class="btn primary" type="button" id="chatUse">Use this reply</button></div>
@@ -2328,7 +2334,7 @@ body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved d
         <label><input type="radio" name="prov" value="local"> Local model</label>
       </div>
       <div class="pv" data-p="manual">
-        <p class="note" style="margin:0">No key needed. Works with a free ChatGPT or Claude account. Job tracker writes the full prompt for you. You paste it into the chat, then paste the reply back here. It does the rest: formatting, saving, Word and PDF files.</p>
+        <p class="note" style="margin:0">No key needed. Works with a free AI chat such as ChatGPT, Gemini or Claude. Job tracker writes the full prompt for you. You paste it into the chat, then paste the reply back here. It does the rest: formatting, saving, Word and PDF files.</p>
         <p class="note" style="margin:0">For company research and finding jobs, switch on the chat’s web search so it can look things up. Always check a posting before you apply.</p>
       </div>
       <div class="pv" data-p="anthropic">
@@ -2408,7 +2414,7 @@ body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved d
     </div>
     <div class="spane hidden" data-pane="prompts">
       <fieldset>
-        <legend>Prompts for free ChatGPT and Claude</legend>
+        <legend>Prompts for a free AI chat</legend>
         <p class="note" style="margin:0">Copy a prompt, paste it into a chat, and the chat creates or updates your tracker spreadsheet. Each prompt already contains your tracker’s exact layout and your search settings, so the file it makes works in Job tracker.</p>
         <div class="row2"><a class="btn small" href="https://chatgpt.com/" target="_blank" rel="noopener">Open ChatGPT</a><a class="btn small" href="https://claude.ai/new" target="_blank" rel="noopener">Open Claude</a><a class="btn small" href="examples/Job_Search_Tracker_Example.xlsx" download title="A tracker in the exact layout Job tracker reads, with three made-up example rows. Attach it to the chat when it needs to see the format.">Download example tracker</a><label class="inline"><input type="checkbox" id="pmResume" checked> Put my resume text in the prompts</label></div>
         <p class="note" style="margin:0">If a chat gets the tracker’s layout wrong, download the example tracker and attach it to the chat with the prompt. Its three example rows are marked EXAMPLE ROW in Notes, so you can delete them later.</p>
@@ -5086,7 +5092,7 @@ const STATIC_GUIDE = [
     intro: "Job tracker writes tailored resumes and cover letters, researches companies and finds jobs with an AI. This page has two ways to use one. You can switch any time without losing anything.",
     steps: [
       { text: "Open **Settings** (the last tab, on the right). On the **General** tab, find **Drafting with** and pick a mode. The badge at the top right always shows the mode in use; click it to come back here.", img: "st-02-settings-free-chat.jpg", caption: "Settings, General: Drafting with, here set to Free chat." },
-      { text: "**Free chat (copy and paste)** uses ChatGPT (no account needed) or Claude in another tab. No key, no cost, and it can search the web for jobs. The next section shows how it works." },
+      { text: "**Free chat (copy and paste)** uses a free AI chat in another tab: ChatGPT, Gemini, Perplexity and Z.ai work without an account, and Claude, Copilot, DeepSeek and others work with a free one. No key, no cost, and it can search the web for jobs. The next section shows how it works." },
       { text: "**Local model** uses an AI running on your own computer (Ollama or LM Studio) through its API. Job tracker talks to it directly, so drafts appear without copying anything, and nothing leaves your computer. On its own it can't search the web, but in LM Studio a web search plugin lets it search for **Find jobs**. See **Local model** below to set it up." },
       { text: "Not sure? Start with **Free chat**. Finding jobs uses the chat prompts on this page, unless your local model has a web search plugin." },
       { text: "There are no paid API keys here. The site has no server of its own, so it never holds a key, and your data only goes to your chat or your own model." },
@@ -5096,7 +5102,7 @@ const STATIC_GUIDE = [
     steps: [
       { text: "In **Settings**, **General**, choose **Free chat (copy and paste)** and click **Save settings**." },
       { text: "When you ask for something (for example **Craft resume** on a job, or **Write the search prompt** in Find jobs), the **Ask your chat** window opens with the prompt ready." },
-      { text: "Click **Copy prompt**, then open a new chat at chatgpt.com or claude.ai (the links are in the window). Paste the prompt and send it. For finding jobs, turn on the chat's **web search**.", img: "st-04-chat-window.jpg", caption: "The Ask your chat window: copy the prompt, paste the reply." },
+      { text: "Pick a chat in the window and click **Copy and open chat** (or **Copy prompt**, then **Open**). Paste the prompt and send it. For finding jobs, turn on the chat's **web search**.", img: "st-04-chat-window.jpg", caption: "The Ask your chat window: copy the prompt, paste the reply." },
       { text: "When the chat has finished, click the chat's own **copy** button under the reply (it copies the whole reply, as written), paste it into **The chat's reply** and click the button under it: **Use this reply**, or for a job search **Generate job tracker file**. Job tracker does the rest: the resume or letter, the Word and PDF files, or the job results." },
       { text: "Job tracker tidies what the copy brings along: labels such as **Writing** from a ChatGPT block, escaped characters, citation marks and lines that ran together. Resume prompts ask the chat for a code block, so every line break survives." },
       { text: "Your privacy: before your resume goes into a prompt, your name, email, phone, address and links are replaced with placeholders such as [NAME] and [EMAIL]. Job tracker puts them back when you paste the reply." },
@@ -5132,7 +5138,7 @@ const STATIC_GUIDE = [
       { text: "Opening it in Excel? Close it again before you make changes in Job tracker, so both don't change the file at once." },
     ] },
   { id: "find", title: "Find jobs",
-    intro: "Job tracker writes a search prompt from what you're looking for and your resume. Your free ChatGPT or Claude chat searches the web, and the results come back in your job tracker file's columns.",
+    intro: "Job tracker writes a search prompt from what you're looking for and your resume. Your free AI chat searches the web, and the results come back in your job tracker file's columns.",
     steps: [
       { text: "Fill in **What you're looking for**. Leave **Roles or keywords** empty for roles that fit your resume. Leave **Near** empty to search around the city on your resume; type a city to search there instead. Then choose how far, work model, how recent and how many results.", img: "st-06-find-form.jpg", caption: "What you're looking for. Empty boxes use your resume." },
       { text: "Click **Write the search prompt**, copy it into a chat with **web search** on, and paste the whole reply back (see **Free chat** above)." },
@@ -5172,7 +5178,7 @@ const STATIC_GUIDE = [
     steps: [
       { text: "The sun and moon button at the top right switches between light and dark. **Appearance** also has the accent colour, text size and **reduce motion**, which stills the moving background.", img: "st-12-appearance.jpg", caption: "Settings, Appearance: the themes." },
       { text: "**General** has the AI mode, your resume, hidden companies (their listings are left out everywhere), extra details about you for drafts, and how many days to wait before a follow-up." },
-      { text: "**Prompts** has ready-made prompts for free ChatGPT and Claude. **Local files** has your files and backups." },
+      { text: "**Prompts** has ready-made prompts for any free AI chat. **Local files** has your files and backups." },
     ] },
   { id: "help", title: "If something isn't right",
     intro: "",
@@ -5679,7 +5685,7 @@ ${spec}`;
     { id: "create", title: "Create a new tracker", file: true,
       when: "You don't have a tracker yet and want an Excel file in the exact layout Job tracker reads.",
       before: ["Easiest: Job tracker can create it for you (Settings, Local files, Create a new tracker). Use this prompt only if you'd rather have the chat build it.",
-        "Open a new chat in ChatGPT or Claude and paste the prompt.", "Optional: press Download example tracker above and attach it too, so the chat can copy the exact layout.", save], prompt: create },
+        "Open a new chat in a free AI chat such as ChatGPT or Gemini and paste the prompt.", "Optional: press Download example tracker above and attach it too, so the chat can copy the exact layout.", save], prompt: create },
     { id: "find_update", title: "Find jobs and add them to my tracker (Excel file)", file: true,
       when: "You want the chat to search the web and hand you back your tracker with new rows added.",
       before: [attach, "Turn on the chat's web search if it has a switch for it.", "Paste the prompt and send it.", keep, save], prompt: findUpdate },
@@ -8297,7 +8303,7 @@ function bindBrief(id){
 }
 
 function webCapable(){const p=S.settings&&S.settings.ai&&S.settings.ai.provider;return p==="anthropic"||p==="openai"}
-/* Copy and paste mode: no API. Job tracker builds the prompt, the user runs it in a free ChatGPT or Claude chat and pastes the reply back. */
+/* Copy and paste mode: no API. Job tracker builds the prompt, the user runs it in a free AI chat and pastes the reply back. */
 const isManual=()=>!!(S.settings&&S.settings.ai&&S.settings.ai.provider==="manual");
 const unfence=t=>String(t||"").trim().replace(/^```[a-z]*\s*\n/i,"").replace(/\n```\s*$/,"").trim();
 /* A reply as it comes off a chat website: no code fences, no label from a ChatGPT block ("Writing", "Plain text"), and no
@@ -8349,7 +8355,7 @@ function askChat(o){
     $("chatTitle").textContent=o.title;
     $("chatUse").textContent=o.useLabel||"Use this reply";
     $("chatPriv").classList.toggle("hidden",!(o.restore&&Object.keys(o.restore).length));
-    $("chatWebHint").textContent=o.web?"Turn on the chat’s web search first, if it has one.":"";
+    $("chatWebHint").textContent=o.web?"Turn on the chat’s web search first (often a Search or globe button). Without it, the chat can make up results.":"";
     $("chatAltRow").classList.toggle("hidden",!o.promptAlt);
     $("chatAlt").checked=true;$("chatAltLabel").textContent=o.altLabel||"";
     $("chatAlt").onchange=()=>{$("chatPrompt").value=cur()};
@@ -8359,6 +8365,12 @@ function askChat(o){
     const asia=()=>$("chatAsiaNote").classList.toggle("hidden",!/deepseek|qwen|kimi|z\.ai/.test($("chatSite").value));
     $("chatOpen").href=$("chatSite").value;asia();
     $("chatSite").onchange=()=>{$("chatOpen").href=$("chatSite").value;asia();try{localStorage.setItem("jobline-chat-site",$("chatSite").value)}catch(e){}};
+    // the copy starts before the new tab takes focus: a browser only lets a page write the clipboard while it has focus
+    $("chatCopyOpen").onclick=()=>{
+      const copied=navigator.clipboard?navigator.clipboard.writeText(cur()):Promise.reject();
+      $("chatOpen").click();   // the link, not window.open: a link with target=_blank opens a tab, window.open with options can open a window
+      copied.then(()=>{$("chatCopied").textContent="Copied. Paste it into the chat that just opened."},()=>{$("chatPrompt").select();$("chatCopied").textContent="Press Ctrl+C to copy, then paste it into the chat."});
+    };
     $("chatCopy").onclick=async()=>{try{await navigator.clipboard.writeText(cur());$("chatCopied").textContent="Copied. Paste it into your chat."}catch(e){$("chatPrompt").select();$("chatCopied").textContent="Press Ctrl+C to copy."}};
     $("chatUse").onclick=()=>{const t=cleanReply($("chatReply").value);if(!t){$("chatErr").textContent="Paste the chat’s reply first.";return}finish(resolve,{text:restoreText(t,o.restore),web:useWeb()})};
     $("chatCancel").onclick=()=>finish(reject,Object.assign(new Error("Cancelled."),{name:"AbortError"}));
@@ -8370,7 +8382,7 @@ const RESEARCH={
   get:id=>S.research[id],
   async load(id){try{const r=await api("/api/research/get",{id});S.research[id]=r.research||null}catch(e){S.research[id]=null}},
   metaText:r=>r.at?(r.web?`Researched on the web on ${r.at} with ${r.provider}. Sources are listed below the briefing.`:`Built on ${r.at} from the model’s general knowledge, without a web search. Check ratings and anything time-sensitive with the links on the right.`)
-    :(isManual()?"Job tracker writes the prompt. You paste it into ChatGPT or Claude, then paste the reply back here. Switch on the chat’s web search for current ratings and news."
+    :(isManual()?"Job tracker writes the prompt. You paste it into a free AI chat, then paste the reply back here. Switch on the chat’s web search for current ratings and news."
     :webCapable()?"Searches the web for current information, including ratings and reviews, and lists its sources. Takes about a minute."
     :"Your local model can’t search the web, so this comes from what it already knows. Ratings and reviews are in the links on the right."),
   busyText:()=>isManual()?"Waiting for your chat’s reply…":webCapable()?"Searching the web and writing the briefing. This usually takes about a minute.":"Writing the briefing…",
@@ -8718,7 +8730,7 @@ async function generateTracker(rows){
 const SEARCH={state:null,
   async load(){try{const r=await api("/api/search/state");SEARCH.state=r.state||{}}catch(e){SEARCH.state={}}},
   canWeb(){return findEngine()!=="auto"},
-  introText(){return findEngine()==="chat"?"Job tracker writes a search prompt from your criteria and resume (if you’ve added one). Paste it into ChatGPT or Claude with web search on, then paste the reply back. Results come back in your tracker’s columns, ready to review and add.":SEARCH.canWeb()?"Search the web for current postings that fit your resume. Results come back in your tracker’s columns, ready to review and add.":"Search the job boards, then paste the postings you like. Each one comes back in your tracker’s columns, with fit, matches and gaps against your resume."},
+  introText(){return findEngine()==="chat"?"Job tracker writes a search prompt from your criteria and resume (if you’ve added one). Paste it into a free AI chat with web search on, then paste the reply back. Results come back in your tracker’s columns, ready to review and add.":SEARCH.canWeb()?"Search the web for current postings that fit your resume. Results come back in your tracker’s columns, ready to review and add.":"Search the job boards, then paste the postings you like. Each one comes back in your tracker’s columns, with fit, matches and gaps against your resume."},
   formNote(){return SEARCH.canWeb()?"Every result links to its posting so you can check it before applying.":(S.aiReady?"Searching the web needs an Anthropic or OpenAI key in Settings. Your local model can still format postings you paste.":"Set up drafting in Settings to search the web and format postings.")},
   emptyText(){return SEARCH.canWeb()?"Set your criteria and search the web, or paste a posting you found on a job board.":"Press Find jobs above, or open a job board with the links on the right and paste a posting you like under “Add a posting you found.”"},
   webText(){return SEARCH.canWeb()?"Search the web for roles that fit your resume.":"Search the boards and paste postings to add."},
@@ -9063,7 +9075,7 @@ function renderInterviews(){
     const head=`<h3>${esc(g.t)} <span class="ivn">${g.list.length}</span></h3><p class="note">${esc(g.d)}</p>`;
     return g.fold?`<details class="panel ivgroup"><summary>${head}</summary>${body}</details>`:`<section class="panel ivgroup${g.hot?" hot":""}">${head}${body}</section>`};
   const build=isManual()
-    ?"Job tracker writes one prompt for both the company briefing and the interview guide, with the job and your resume (your name and contact details are swapped for placeholders). Copy it into a free ChatGPT or Claude chat, then paste the whole reply back. Both sections fill in, with your details put back."
+    ?"Job tracker writes one prompt for both the company briefing and the interview guide, with the job and your resume (your name and contact details are swapped for placeholders). Copy it into a free AI chat, then paste the whole reply back. Both sections fill in, with your details put back."
     :"Job tracker asks your AI for a company briefing, then your interview questions, from the job and your resume. It takes a minute or two.";
   const how=`<section class="panel ivhow" aria-label="How interview prep works"><h3>How it works</h3><ol>
     <li><span class="hnum" aria-hidden="true">1</span><div><b>Pick an application</b><span>Click <b>Start prep</b> on a job below. Or open a job in Applications and click <b>Interview prep</b>.</span></div></li>
@@ -9095,10 +9107,10 @@ function prepCount(id){const r=PREP[id];if(!r)return 0;const q=parseBrief(r.text
 function prepMeta(r,id){
   const p=PREP[id],at=r.at||(p&&p.at)||"";
   if(r.text||p)return at?`Built ${at}`+(r.text&&r.web?" with a web search":""):"Built";
-  return isManual()?"About 2 minutes · ChatGPT or Claude":webCapable()?"About a minute · searches the web":"About a minute";
+  return isManual()?"About 2 minutes · a free AI chat":webCapable()?"About a minute · searches the web":"About a minute";
 }
 function howBuild(){
-  const steps=isManual()?["Copy the prompt Job tracker writes","Paste it into ChatGPT or Claude, with web search on","Paste the reply back here"]
+  const steps=isManual()?["Copy the prompt Job tracker writes","Paste it into a free AI chat, with web search on","Paste the reply back here"]
     :["Job tracker asks your model","It writes the company briefing","Then your interview questions"];
   return `<details class="howbuild"><summary>How it works</summary><ol>${steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></details>`;
 }
@@ -9299,7 +9311,7 @@ const ATS_LABEL={greenhouse:"Greenhouse",lever:"Lever",ashby:"Ashby"};
 const AUTO={run:null};
 const AUTO_INTRO="Finds new roles from the company career pages and Adzuna sources you set up, and matches each one to your resume. You can also paste a posting you found.";
 /* How Find jobs searches: "auto" (company pages and Adzuna, no AI), "api" (web search with an Anthropic or OpenAI key) or
-   "chat" (a prompt for a free ChatGPT or Claude chat). It only changes Find jobs: drafting, research and the rest keep the
+   "chat" (a prompt for a free AI chat). It only changes Find jobs: drafting, research and the rest keep the
    AI mode chosen in Settings. Remembered in this browser. */
 function findEngine(){
   let e="";try{e=localStorage.getItem("jobline-find-engine")||""}catch(x){}
@@ -9319,7 +9331,7 @@ function apiProvider(){
 function engineToggle(engine){
   const nm={anthropic:"Anthropic",openai:"OpenAI"}[apiProvider()],lw=!nm&&localWeb();
   const note={auto:"Reads the career pages and job service you set up. Fast, and it costs nothing.",
-    chat:"Job tracker writes a search prompt for ChatGPT or Claude. Paste it into a chat with web search on, then paste the reply back here.",
+    chat:"Job tracker writes a search prompt for a free AI chat. Paste it into a chat with web search on, then paste the reply back here.",
     api:lw?"Your local model searches the web with its LM Studio plugin. It can take several minutes, and links it didn’t find in its searches are left out.":`Searches the web with your ${nm} API key. It takes 1 to 3 minutes and uses your API credits.`}[engine];
   const own=(engine==="chat"&&!isManual())||(engine==="api"&&!lw&&!(webCapable()&&S.settings.ai.provider===apiProvider()));
   return `<div class="enginebar"><div class="seg2 seg3" role="group" aria-label="How to search">
@@ -9416,7 +9428,7 @@ document.addEventListener("click",async e=>{
   catch(err){toast(err.message);b.disabled=false}
 });
 /* ======================================================================
-   Settings tabs: Settings, Local files, Prompts (for free ChatGPT and Claude)
+   Settings tabs: Settings, Local files, Prompts (for any free AI chat)
    ====================================================================== */
 let STAB="general";
 function showSettingsTab(t){
