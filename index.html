@@ -1124,7 +1124,7 @@ body[data-view="interviews"] .line,body[data-view="interviews"] .main,body[data-
 .pq .pbox{margin-left:38px}
 .pans{display:block;margin-top:4px;color:var(--muted);font-size:12.5px}
 
-/* Company page layout: one grid. At a glance, Direction and Look it up yourself share the top row; every other section
+/* Company page layout: one grid. At a glance, Direction and Helpful links share the top row; every other section
    runs the full width, with What this role needs last. (.cvmain and .cvside only group the markup.) */
 .cv{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
 .cvmain,.cvside{display:contents}
@@ -2038,9 +2038,31 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
 .acts .acts-more > .wide{grid-column:1/-1}
 .btn.listing{font-weight:600}
 .btn .logo-site{width:16px;height:16px;flex:none;stroke:none}
-/* Applications: a wider page, with a narrower list so the job details get most of the room */
+/* The company page: Build prep stands out the same way as Interview prep on the job page; the long explanation moved
+   into "How it works", and the empty tabs carry their own Build prep button. */
+.hero-act .btn.prep-hi,.prep-empty .btn.prep-hi{justify-content:center;min-height:46px;padding:0 22px;font-size:15px;font-weight:700;color:#fff;border:0;
+  background:linear-gradient(115deg,var(--accent-fill,var(--accent)) 0%,#c026d3 55%,#f97316 100%);background-size:160% 100%;
+  box-shadow:0 8px 24px -8px color-mix(in srgb,#c026d3 70%,transparent),inset 0 1px 0 rgba(255,255,255,.25);transition:background-position .35s ease,transform .15s ease}
+.hero-act .btn.prep-hi:hover,.prep-empty .btn.prep-hi:hover{background-position:100% 0;transform:translateY(-1px)}
+.hero-act .btn.prep-hi .ic,.prep-empty .btn.prep-hi .ic{color:#fff}
+.howbuild{font-size:12.5px;color:var(--muted);text-align:left}
+.howbuild summary{cursor:pointer;list-style:none;text-align:right;color:var(--accent);font-weight:600}
+.howbuild summary::-webkit-details-marker{display:none}
+.howbuild summary::after{content:" ›";display:inline-block;margin-left:3px;transition:transform .2s}
+.howbuild[open] summary::after{transform:rotate(90deg)}
+.howbuild ol{margin:8px 0 0;padding:10px 12px 10px 30px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2)}
+.howbuild li+li{margin-top:4px}
+.prep-empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:44px 24px;border-style:solid}
+.prep-empty::before{display:none}
+.prep-empty .pe-ic{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;margin-bottom:14px;color:var(--accent);background:var(--accent-soft)}
+.prep-empty .pe-ic .ic{width:22px;height:22px}
+.prep-empty h3{margin:0 0 6px}
+.prep-empty > .note{margin:0;font-size:14.5px}
+.prep-empty .peek{justify-content:center;margin:18px 0 22px;max-width:560px}
+.prep-empty .peek span{font-size:12.5px;padding:4px 11px}
+/* Every page uses the same wide layout; on Applications the list is narrower so the job details get most of the room */
 @media (min-width:881px){
-  body[data-view="tracker"] .wrap,body[data-view="tracker"] header.top{max-width:1480px}
+  .wrap,header.top{max-width:1480px}
   body[data-view="tracker"] .main{grid-template-columns:minmax(300px,.72fr) minmax(0,1.6fr)}
 }
 </style>
@@ -4974,7 +4996,7 @@ const STATIC_GUIDE = [
     steps: [
       { text: "Open the **Interview prep** tab. Your jobs are grouped by how soon prep matters: **Calls and interviews** first, then **Applied, waiting to hear**, and **Still to apply** folded away underneath. Click **Start prep** on a job, or **Open prep** once its guide is ready. You can also click **Interview prep** on a job in Applications.", img: "st-14-interview-prep.jpg", caption: "Interview prep: your jobs, by how soon prep matters." },
       { text: "On the company page, click **Build prep**. In free chat mode Job tracker writes one prompt for both the company briefing and the interview guide. Copy it into your chat (turn on **web search** for current reviews and news), then paste the whole reply back and both tabs fill in. With a local model it builds both by itself, from what the model already knows.", img: "st-15-build-prep.jpg", caption: "Build prep in free chat mode: one prompt for the briefing and the questions." },
-      { text: "**Company and role** covers what they do, where they're heading, what it's like to work there, how they interview, how to prepare, questions to ask and things to check before accepting. **Look it up yourself** has one-click links to ratings, reviews, interview reports, pay and LinkedIn searches.", img: "st-16-company-role.jpg", caption: "Company and role: the briefing, with Look it up yourself on the right." },
+      { text: "**Company and role** covers what they do, where they're heading, what it's like to work there, how they interview, how to prepare, questions to ask and things to check before accepting. **Helpful links** has one-click links to ratings, reviews, interview reports, pay and LinkedIn searches.", img: "st-16-company-role.jpg", caption: "Company and role: the briefing, with Helpful links on the right." },
       { text: "**Interview questions** has your 60-second pitch, the questions they're likely to ask, stories from your resume (each says which questions it's good for), technical topics to review, your gaps and how to talk about them, and questions to ask them.", img: "st-17-interview-questions.jpg", caption: "Interview questions: your pitch and the questions they're likely to ask." },
       { text: "Click **Practise** next to a question, type your answer the way you'd say it, and click **Get feedback**. You get what works, what to tighten and a stronger version built only from your resume.", img: "st-18-practise.jpg", caption: "Practise: your answer and the feedback on it." },
       { text: "When the chat searched the web, the pages it used are listed as sources. The citation marks ChatGPT adds when you copy a reply, like [1] with its list of links or a source's name after a sentence, are tidied away for you. **Rebuild prep** makes a fresh guide any time." },
@@ -7750,8 +7772,8 @@ function closeCompany(reopen){
 }
 let briefCtl=null;
 function emptyBrief(name){
-  const peek=["glance","mission","culture","interview","prepare","questions","check"].map(k=>`<span style="--k:${SECTION_META[k].c}">${SECTION_META[k].s}</span>`).join("");
-  return `<div class="empty-brief"><h3>Get to know ${esc(name)}</h3><p class="note" style="margin:0;max-width:60ch">A briefing covers what they do, where they’re heading, what it’s like to work there, how interviews usually go, and what to prepare. It takes under a minute.</p><div class="peek">${peek}</div><button class="btn amber" type="button" id="briefBtn2">Build briefing</button></div>`;
+  return emptyPrep(`Get to know ${name}`,"What they do, what it’s like to work there, and how they interview.",
+    ["glance","mission","culture","interview","prepare","questions","check"].map(k=>[SECTION_META[k].s,SECTION_META[k].c]));
 }
 function skeleton(msg){return `<div class="thinking"><i></i>${esc(msg)}</div>`+[1,2,3,4].map(k=>`<div class="skel${k>2?" wide":""}"><b></b><b></b><b style="width:85%"></b><b style="width:60%"></b></div>`).join("")}
 function renderCompany(){
@@ -7776,8 +7798,9 @@ function renderCompany(){
       </dl>
     </div>
     <div class="hero-act">
-      <div class="row2"><button class="btn hidden" type="button" id="briefStop">Stop</button><button class="btn ${built?"":"primary"}" type="button" id="briefBtn">${icon("check")}${built?"Rebuild prep":"Build prep"}</button></div>
+      <div class="row2"><button class="btn hidden" type="button" id="briefStop">Stop</button><button class="btn ${built?"small":"prep-hi"}" type="button" id="briefBtn">${icon(built?"refresh":"sparkle")}${built?"Rebuild prep":"Build prep"}</button></div>
       <p class="note" id="briefMeta">${esc(prepMeta(r,id))}</p>
+      ${built?"":howBuild()}
     </div>
   </header>
   ${isUnnamed(j)?`<div class="banner" style="margin-top:12px">This listing doesn’t name the employer, so research is limited. Open the listing to find out who it is.</div>`:""}
@@ -7792,8 +7815,8 @@ function renderCompany(){
     <div class="cvmain" id="briefOut">${b?b.html:emptyBrief(name)}</div>
     <aside class="cvside">
       <section class="side-card cvlinks" aria-label="Research links">
-        <h3>Look it up yourself</h3>
-        <p class="note" style="margin:0">Current ratings, reviews and people, one click away.</p>
+        <h3>Helpful links</h3>
+        <p class="note" style="margin:0">Reviews, ratings and people at the company.</p>
         ${researchLinks(j).map(g=>`<div class="lgroup"><h4>${esc(g.h)}</h4>${g.note?`<p class="note">${esc(g.note)}</p>`:""}<div class="tiles">${g.items.map(([site,t,u])=>`<a class="tile" href="${esc(u)}" target="_blank" rel="noopener"><span class="site">${esc(site)}</span>${esc(t)}</a>`).join("")}</div></div>`).join("")}
       </section>
       <section class="side-card cvneeds" style="border-top:4px solid var(--amber)">
@@ -7810,7 +7833,7 @@ function renderCompany(){
   $("cvJob").onclick=()=>{S.sel=id;closeCompany(true)};
   bindBrief(id);setupPrep(id);
   const btn=$("briefBtn"),stop=$("briefStop"),out=$("briefOut");
-  if($("briefBtn2"))$("briefBtn2").onclick=()=>btn.click();
+  el.querySelectorAll("[data-build]").forEach(b=>b.onclick=()=>btn.click());
   btn.onclick=async()=>{
     briefCtl=new AbortController();btn.disabled=true;stop.classList.remove("hidden");
     out.innerHTML=skeleton(RESEARCH.busyText());$("toc").innerHTML="";
@@ -7833,7 +7856,7 @@ function renderCompany(){
       out.innerHTML=`<div class="banner wide" style="grid-column:1/-1">${esc(msg)}</div>`+(prev.text?renderBrief(prev,false).html:emptyBrief(name));
       if(prev.text){renderToc(parseBrief(prev.text));bindBrief(id)}
       if($("prepSec")){$("prepSec").outerHTML=prepSecHtml(id);bindPrep(id)}   // the questions it was waiting for are unchanged
-      if($("briefBtn2"))$("briefBtn2").onclick=()=>$("briefBtn").click();
+      el.querySelectorAll("[data-build]").forEach(b=>b.onclick=()=>$("briefBtn").click());
     }finally{if(typeof S.drafting==="number")S.drafting--;if($("briefBtn")){$("briefBtn").disabled=false;$("briefStop").classList.add("hidden")}}
   };
   stop.onclick=()=>briefCtl&&briefCtl.abort();
@@ -7959,6 +7982,8 @@ const ICONS={
   calendar:'<rect x="2.25" y="3.25" width="11.5" height="10.5" rx="1.5"/><path d="M2.25 6.75h11.5M5.5 1.75v2.5M10.5 1.75v2.5"/>',
   hide:'<path d="M2 8s2.25-4.25 6-4.25S14 8 14 8s-2.25 4.25-6 4.25S2 8 2 8z"/><circle cx="8" cy="8" r="1.75"/><path d="m2.75 13.25 10.5-10.5"/>',
   check:'<path d="m3.25 8.25 3 3 6.5-6.5"/>',
+  sparkle:'<path d="M8 2.25 9.3 6.7 13.75 8 9.3 9.3 8 13.75 6.7 9.3 2.25 8 6.7 6.7z"/><path d="M12.5 2.5v2M11.5 3.5h2"/>',
+  refresh:'<path d="M13 8a5 5 0 1 1-1.46-3.54M13 2.75v2.5h-2.5"/>',
   file:'<path d="M4.25 1.75h4.5l3 3v8.5a1 1 0 0 1-1 1h-6.5a1 1 0 0 1-1-1v-10.5a1 1 0 0 1 1-1z"/><path d="M8.75 1.75v3h3M6 9h4M6 11.25h2.5"/>',
   folder:'<path d="M2.25 4.75a1.25 1.25 0 0 1 1.25-1.25h2.6l1.5 1.5h4.9a1.25 1.25 0 0 1 1.25 1.25v5.5a1.25 1.25 0 0 1-1.25 1.25h-9a1.25 1.25 0 0 1-1.25-1.25z"/>',
   download:'<path d="M8 2.25v8M4.75 7 8 10.25 11.25 7M2.75 13.25h10.5"/>',
@@ -8622,15 +8647,29 @@ const PREP_META=[
   [/gaps/i,{c:"var(--red)",ic:"alert",note:"Honest, short, and pointing to how you’d close it."}],
 ];
 function prepCount(id){const r=PREP[id];if(!r)return 0;const q=parseBrief(r.text).find(x=>/likely to ask|questions they/i.test(x.title));return q?q.items.length:0}
+/* One short line under Build prep: how long it takes before, when it was built after. The detail lives in
+   "How it works" (howBuild) and in the briefing's own footer. */
 function prepMeta(r,id){
-  const p=PREP[id];
-  if(r.text||p)return [r.text?RESEARCH.metaText(r):"",p?`Interview questions built ${p.at||""}.`:""].join(" ").trim();
-  return "Builds both tabs at once: the company briefing and your interview questions. "+RESEARCH.metaText(r);
+  const p=PREP[id],at=r.at||(p&&p.at)||"";
+  if(r.text||p)return at?`Built ${at}`+(r.text&&r.web?" with a web search":""):"Built";
+  return isManual()?"About 2 minutes · ChatGPT or Claude":webCapable()?"About a minute · searches the web":"About a minute";
+}
+function howBuild(){
+  const steps=isManual()?["Copy the prompt Job tracker writes","Paste it into ChatGPT or Claude, with web search on","Paste the reply back here"]
+    :["Job tracker asks your model","It writes the company briefing","Then your interview questions"];
+  return `<details class="howbuild"><summary>How it works</summary><ol>${steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></details>`;
+}
+/* The empty company and interview tabs: a title, one line, what you'll get as chips, and Build prep right there. */
+function emptyPrep(title,line,chips){
+  return `<div class="empty-brief prep-empty"><span class="pe-ic" aria-hidden="true">${icon("sparkle")}</span><h3>${esc(title)}</h3><p class="note">${esc(line)}</p>
+    <div class="peek">${chips.map(([t,c])=>`<span style="--k:${c}">${esc(t)}</span>`).join("")}</div>
+    <button class="btn prep-hi" type="button" data-build>${icon("sparkle")}Build prep</button></div>`;
 }
 function prepSecHtml(id){
   const r=PREP[id];
   if(r===undefined)return `<section class="prep" id="prepSec">${skeleton("Loading…")}</section>`;
-  if(!r)return `<section class="prep" id="prepSec"><div class="empty-brief"><h3>Your interview questions</h3><p class="note" style="margin:0 auto 14px;max-width:62ch">The questions you’ll likely get, with a practice mode that gives feedback on your answers. Plus your 60-second pitch, stories from your resume, topics to review, how to talk about gaps, and questions to ask them.</p><p class="note" style="margin:0"><b>Click Build prep at the top</b> to make this tab and Company and role together.</p></div></section>`;
+  if(!r)return `<section class="prep" id="prepSec">${emptyPrep("Your interview questions","Practise answers and get feedback on each one.",
+    [["60-second pitch","var(--amber)"],["Likely questions","var(--blue)"],["Practice mode","var(--blue)"],["Your stories","var(--green)"],["Gaps","var(--red)"],["Questions to ask","var(--blue)"]])}</section>`;
   return `<section class="prep" id="prepSec"><div id="prepOut" class="prepout">${renderPrep(r.text)}</div></section>`;
 }
 /* A story ends with the questions it answers, "(answers 2, 5)", sometimes after a stray " | ". Show that as a small
