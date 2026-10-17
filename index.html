@@ -2000,6 +2000,17 @@ button,.btn,.views button,.inuse-item,.slbar-toggle{-webkit-user-select:none;use
 
 /* Company page, Interview questions: keep each section's coloured top edge over this look's card border */
 .cvpanel .pcard{border-top:3px solid var(--k,var(--line))}
+
+/* Titles stand apart from the text under them: page and dialog titles in the text colour, section titles in the
+   accent colour with a short bar, and item titles (a file, a resume, a setting) a step brighter than their notes. */
+:root:root:root{--head:color-mix(in srgb,var(--accent) 80%,var(--text))}
+legend,.card h3,.side-card h3,.hpanel h3,.sform h3,.chart h3,.rspanel h3,.ivgroup h3,.gsec h3,.prephead h3,.neg h3,
+.autohead h3,.htour h3,.hsteps header h3,.ivhow h3,.sec h3,.lgroup h4,.asetup h4{color:var(--head)}
+legend{display:flex;align-items:center;gap:8px;font-size:15px;margin-bottom:8px}
+legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var(--accent);flex:none}
+.lgroup h4{text-transform:uppercase;letter-spacing:.05em;font-size:11.5px}
+.frow b{color:var(--text);font-weight:650}
+#setForm>h2,dialog h2,.vhead h2,.dhead h2,.hero h2{color:var(--text)}
 </style>
 </head>
 <body data-view="home">
@@ -3225,19 +3236,36 @@ function jsonObjects(text) {
 }
 function looseJson(s) {
   try { return JSON.parse(s); } catch (e) {}
-  let out = "", inStr = false, esc = false;
-  for (const ch of s.replace(CHAT_MARK, "")) {
-    if (inStr) {
-      if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false;
-      out += ch === "\n" || ch === "\r" || ch === "\t" ? " " : ch;
+  const out = repairJson(s.replace(CHAT_MARK, "").replace(/[   ]/g, " "));
+  try { return JSON.parse(out); } catch (e) {}
+  try { return JSON.parse(repairJson(out.replace(/[“”]/g, '"'))); } catch (e) { return null; }
+}
+/* The repairs for one {...}: inside strings, line breaks become spaces, a backslash JSON doesn't allow goes and a quote that doesn't end the string (one
+   not followed by , : } ], a citation or another key) is escaped. Between strings, ChatGPT's copy-button citations go
+   ("([Indeed][1])", "([indeed.com](https://...))"), a markdown link or bare address as a value becomes a quoted address,
+   a missing comma between two lines is put back and trailing commas go. */
+function repairJson(s) {
+  const parts = [];                                  // [text, isString]
+  let cur = "", inStr = false;
+  for (let k = 0; k < s.length; k++) {
+    const ch = s[k];
+    if (!inStr) {
+      if (ch === '"') { parts.push([cur, false]); cur = '"'; inStr = true; } else cur += ch;
       continue;
     }
-    if (ch === '"') inStr = true;
-    out += ch;
+    if (ch === "\\") { const nx = s[k + 1] || ""; cur += /["\\\/bfnrtu]/.test(nx) ? ch + nx : nx; k++; continue; }   // "https\://" → "https://"
+    if (ch === '"') {
+      if (/^\s*(?:[,:}\]]|$|\r?\n\s*"|\(\s*\[)/.test(s.slice(k + 1, k + 40))) { parts.push([cur + '"', true]); cur = ""; inStr = false; }
+      else cur += '\\"';
+      continue;
+    }
+    cur += ch === "\n" || ch === "\r" || ch === "\t" ? " " : ch;
   }
-  out = out.replace(/,\s*([}\]])/g, "$1");
-  try { return JSON.parse(out); } catch (e) {}
-  try { return JSON.parse(out.replace(/[“”]/g, '"')); } catch (e) { return null; }
+  parts.push([cur, inStr]);
+  return parts.map(([t, isStr]) => isStr ? t : t.replace(REF_CITE, "")
+    .replace(/[ \t]*\((?:[ \t]*\[[^\]\n]*\]\([^)\s]+\)[ \t]*,?)+\)/g, "")
+    .replace(/\[[^\]\n]*\]\((https?:\/\/[^)\s]+)\)/g, '"$1"')
+    .replace(/(:\s*)(https?:\/\/[^\s,}\]"]+)/g, '$1"$2"')).join("").replace(/"(\s*\r?\n\s*)"/g, '",$1"').replace(/,\s*([}\]])/g, "$1");
 }
 function cleanRow(r) {
   const out = {};
@@ -3246,7 +3274,7 @@ function cleanRow(r) {
     if (k === "km") {
       const n = v === "" || v == null || typeof v === "boolean" ? NaN : Number(String(v).trim().replace(/^~?\s*(\d+(?:\.\d+)?)\s*(?:km|kilometres|kilometers)?\b.*$/i, "$1"));   // 12, "12", "~12 km"
       v = Number.isFinite(n) ? Math.round(n) : "";
-    } else v = v == null ? "" : String(v).trim();
+    } else v = v == null ? "" : String(v).replace(REF_CITE, "").replace(/[ \t]*\((?:[ \t]*\[[^\]\n]*\]\([^)\s]+\)[ \t]*,?)+\)/g, "").trim();   // ChatGPT's citations, "([Indeed][1])"
     out[k] = v;
   }
   if (!["High", "Medium", "Stretch", "Low"].includes(out.fit)) out.fit = "Medium";
@@ -6467,7 +6495,7 @@ async function searchForm(root) {
   let cleared = false;
   if (roles.value.trim() === FORM_DEFAULTS.roles) { roles.value = ""; cleared = true; }
   if (loc.value.trim() === FORM_DEFAULTS.location) { loc.value = ""; cleared = true; }
-  if (cleared) roles.dispatchEvent(new Event("change"));   // app.js saves the criteria and redraws the board tiles
+  if (cleared) { roles.dispatchEvent(new Event("input")); roles.dispatchEvent(new Event("change")); }   // input refreshes the roles warning; app.js saves the criteria and redraws the board tiles
   const boards = root.querySelector("#boards");
   if (boards) { new MutationObserver(() => fixBoards(boards, city)).observe(boards, { childList: true }); fixBoards(boards, city); }
 }
@@ -8062,7 +8090,7 @@ function renderSearch(){
       ${S.resume&&S.resume.ok||engine==="auto"?"":`<p class="note" style="margin:0 0 12px">No resume yet, so results are matched to your search: fill in the roles you want. <button class="btn small ghost" type="button" data-act="upload-resume">Upload resume</button> to see your fit, matches and gaps for each posting.</p>`}
       <div class="fgrid">
         <label class="wide">Roles or keywords (up to ${MAX_ROLES})<input id="sRoles" value="${esc(c.roles)}" placeholder="e.g. C# developer, MES developer" aria-describedby="sRolesWarn"></label>
-        <p class="note wide${tooManyRoles(c.roles)?"":" hidden"}" id="sRolesWarn" role="alert" style="color:var(--red);margin:-6px 0 0">${esc(rolesWarning(c.roles))}</p>
+        <p class="note wide${tooManyRoles(c.roles)?"":" hidden"}" id="sRolesWarn" role="alert" style="color:var(--red);font-size:12.5px;margin:-8px 0 0">${esc(rolesWarning(c.roles))}</p>
         <label>Near<input id="sLoc" value="${esc(c.location)}"></label>
         <label>Within<select id="sKm">${opt([["15","15 km"],["30","30 km"],["50","50 km"],["100","100 km"],["150","150 km"]],c.km)}</select></label>
         <label>Work model<select id="sWm">${opt([["Any","Any"],["On-site","On-site"],["Hybrid","Hybrid"],["Remote","Remote"],["Hybrid or remote","Hybrid or remote"]],c.workModel)}</select></label>
@@ -8176,7 +8204,7 @@ function renderResults(){
 const MAX_ROLES=2;
 const splitRoles=s=>String(s||"").split(/[,;|\n]|\s+or\s+/i).map(r=>r.trim()).filter(Boolean);
 const tooManyRoles=s=>splitRoles(s).length>MAX_ROLES;
-const rolesWarning=s=>{const n=splitRoles(s).length;return n>MAX_ROLES?`That’s ${n} roles. Search for up to ${MAX_ROLES} at a time, for example “teacher, tutor”, then run another search for the rest.`:""};
+const rolesWarning=s=>{const n=splitRoles(s).length;return n>MAX_ROLES?`That’s ${n} roles. Keep it to ${MAX_ROLES} per search, for example “teacher, tutor”.`:""};
 const searchRoles=()=>((SEARCH.state||{}).criteria||{}).roles||"";
 /* "teacher, tutor" gives Teacher_and_Tutor, for the name of a file made from that search (as the server's trackerPrefix) */
 const rolesName=s=>splitRoles(s).slice(0,MAX_ROLES).map(r=>r.replace(/C#/g,"CSharp").replace(/\+/g,"Plus").replace(/[^\p{L}\p{N} -]+/gu," ")
