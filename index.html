@@ -2062,7 +2062,9 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
 .prep-empty .peek span{font-size:12.5px;padding:4px 11px}
 /* Resume tab: your resume and ATS Resume Optimizer side by side, with a drop zone for any resume file */
 .rsgrid .rsfile{grid-column:auto}
-.rsstart > .empty-brief{grid-column:auto;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rsupload{display:flex;flex-direction:column;gap:12px}
+.rsupload h3{display:flex;align-items:center;gap:8px;margin:0}
+.rsupload > .note{margin:0}
 .rsatsgen{display:flex;flex-direction:column;gap:12px}
 .rsatsgen h3{display:flex;align-items:center;gap:8px;margin:0}
 .rsatsgen > .note{margin:0}
@@ -2082,6 +2084,13 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
 .dropzone.busy .dz-ic{animation:dzpulse 1.2s ease-in-out infinite}
 @keyframes dzpulse{50%{opacity:.5;transform:scale(.92)}}
 :root[data-motion="reduce"] .dropzone.busy .dz-ic{animation:none}
+/* Uploads that take a drop: the "or drop a file here" line under a button, and the dashed drop areas */
+.dropnote{display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:12px;color:var(--muted)}
+.dropnote .ic{width:13px;height:13px;color:var(--accent);flex:none}
+.rstools + .dropnote{margin:-4px 0 10px}
+.dz-area{border:1.5px dashed var(--accent-line)!important;background:color-mix(in srgb,var(--accent) 5%,var(--surface))!important}
+.dz-area > .dropnote{justify-content:center;margin-top:12px;font-size:12.5px}
+#slTrkCard.dz-area .dropnote{justify-content:flex-start}
 /* The "Downloaded" message's Open PDF button, and the optimizer's "Use this as your main resume?" question */
 .toast .toast-act{margin-left:12px;padding:3px 10px;min-height:0;pointer-events:auto;background:var(--accent);color:var(--accent-ink,#fff);border:0}
 .toast:has(.toast-act){pointer-events:auto}
@@ -2150,6 +2159,13 @@ body[data-view="resume"] #slBar{display:none}   /* the folder card under Saved d
 .rsready .ic{color:var(--ok-text)}
 .rsready .note{margin:0;font-size:12.5px}
 .rsready .note b{display:inline;color:var(--ok-text)}
+/* Home: the tour card and Get started in three steps get inner spacing, so the video and the heading don't touch the
+   card's edges; the heading lines up with the numbered steps under it */
+.panel.htour{padding:20px 22px;gap:24px}
+.panel.hsteps{padding:20px 0 12px}
+.panel.hsteps > header{padding:0 22px 8px}
+.panel.hsteps > header h3{margin:0}
+@media (max-width:640px){.panel.htour{padding:16px}.panel.hsteps > header{padding:0 16px 8px}}
 /* Every page uses the same wide layout; on Applications the list is narrower so the job details get most of the room */
 @media (min-width:881px){
   .wrap,header.top{max-width:1480px}
@@ -6507,7 +6523,7 @@ async function updateGreeting() {
 const PLUS = '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>';
 function buildResumeTop(root) {
   const grid = root.querySelector(".rsgrid"), top = grid && grid.querySelector(".rsfile");
-  const empty = root.querySelector(".rsstart > .empty-brief") || (!grid && root.querySelector(".empty-brief"));
+  const empty = root.querySelector(".rsstart > .rsupload") || (!grid && root.querySelector(".empty-brief"));
   if (empty && !root.querySelector(".rsexamples")) {   // no resume yet: the examples help most now
     const examples = document.createElement("section");
     examples.className = "panel rspanel rsdocs rsexamples";
@@ -7700,7 +7716,13 @@ function renderResume(){
   const el=$("resumepage");if(!el||VIEW!=="resume")return;
   const r=S.resume||{},head=`<div class="vhead"><h2>Your resume</h2><p>The resume Job tracker tailors for each application. Your original file is never changed.</p></div>`;
   const up=(label,cls)=>`<button class="btn${cls?" "+cls:""}" type="button" data-act="upload-resume">${icon("plus")}${label}</button>`;
-  if(!r.ok){el.innerHTML=head+`<div class="rsgrid rsstart"><div class="empty-brief"><h3>No resume yet</h3><p class="note" style="margin:0 0 16px;max-width:60ch">Upload the resume you send to employers. A Word file works best; a text-based PDF, .odt, .rtf, .txt or .md file also works. Job tracker reads it to tailor resumes and cover letters, and to show how well you match each listing.</p>${up("Upload resume","primary")}</div>${atsGenCard()}</div>${atsPanel()}`;bindAtsGen();bindAtsPanel();return}
+  if(!r.ok){el.innerHTML=head+`<div class="rsgrid rsstart"><section class="panel rspanel rsupload"><h3>${icon("file")}Upload your resume</h3>
+      <p class="note">The resume you send to employers. Job tracker tailors resumes and cover letters from it.</p>
+      <div class="dropzone" data-act="upload-resume" role="button" tabindex="0" aria-label="Choose your resume to upload">
+        <span class="dz-ic" aria-hidden="true">${icon("upload")}</span>
+        <b>Drag your resume here</b>
+        <span class="note dz-hint">or <u>choose a file</u> · Word works best; PDF, .odt, .rtf, .txt or .md also work</span>
+      </div></section>${atsGenCard()}</div>${atsPanel()}`;bindAtsGen();bindAtsPanel();return}
   const meta=(S.resumes||[]).find(x=>x.file===r.file),secs=r.sections||[],skills=r.skills||[];
   const usual=[["Summary",/SUMMARY|PROFILE|OBJECTIVE|ABOUT/],["Skills",/SKILL|TECHNOLOG|COMPETENC/],["Experience",/EXPERIENCE|EMPLOYMENT|WORK HISTORY|CAREER/],["Education",/EDUCATION|TRAINING|CERTIF/]];
   const absent=usual.filter(([,rx])=>!secs.some(s=>rx.test(s.toUpperCase()))).map(([n])=>n);
@@ -7897,6 +7919,7 @@ function resumeChooser(r){
     <label class="trow"><input type="radio" name="rspick" value=""${pinned?"":" checked"}><span><b>Automatic</b><span class="note">A Word file first, then PDF, then .md or .txt; the newest of that kind</span></span></label>${files.map(row).join("")}</div></section>`;
 }
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest("[data-act=upload-resume]"))$("resFile").click()});
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches(".dropzone[data-act=upload-resume]")){e.preventDefault();$("resFile").click()}});
 /* After a file downloads on its own: say so (after the "Saved" message), with Open for a PDF. Settings, Downloads picks
    Word, PDF or both, kept in this browser. */
 window.addEventListener("jt-downloaded",e=>{
@@ -7914,7 +7937,7 @@ if($("dlFmt")){
 /* Drag and drop works on every upload. A file dropped on an upload button or card goes to that upload; dropped elsewhere
    on Home, Resume or Applications, a resume file goes to Upload resume and an .xlsx file opens as the job tracker file.
    The hint says which. The ATS Resume Optimizer's drop zone handles its own drops. */
-const DROP_TARGETS=[["[data-act=upload-resume],.rsfile,.rsstart>.empty-brief","resFile"],["[data-act=sl-open-tracker],[data-act=create-tracker]","slTrkFile"],["#slRestore","slRestoreFile"]];
+const DROP_TARGETS=[["[data-act=upload-resume],.rsfile,.rsstart>.rsupload","resFile"],["[data-act=sl-open-tracker],[data-act=create-tracker]","slTrkFile"],["#slRestore","slRestoreFile"]];
 const RESUME_EXTS=/\.(docx|pdf|odt|rtf|txt|md|doc|pages)$/i;
 const DROP_VIEWS=["home","resume","tracker"];   // pages where a file dropped anywhere is taken; elsewhere only on an upload
 const DROP_HINTS={resFile:["Drop to add this resume","Word, PDF, .odt, .rtf, .txt or .md. Several at once are fine."],
@@ -7923,6 +7946,8 @@ const DROP_HINTS={resFile:["Drop to add this resume","Word, PDF, .odt, .rtf, .tx
 function dropTarget(e){
   const at=e.target.closest?e.target:e.target.parentElement;
   if(!at||at.closest("#rsDrop"))return null;
+  const marked=at.closest("[data-drop]");if(marked&&$(marked.dataset.drop))return {el:marked.classList.contains("dz-area")?marked:marked.closest(".row2,.rstools,p,li")||marked,id:marked.dataset.drop};
+  const note=at.closest(".dropnote");if(note){const b=note.previousElementSibling&&note.previousElementSibling.querySelector?(note.previousElementSibling.matches("[data-drop]")?note.previousElementSibling:note.previousElementSibling.querySelector("[data-drop]")):null;if(b)return {el:note,id:b.dataset.drop}}
   for(const [sel,id] of DROP_TARGETS){const el=at.closest(sel);if(el&&$(id))return {el,id}}
   if(!DROP_VIEWS.includes(VIEW)||document.body.classList.contains("in-company"))return null;
   return {el:null,id:VIEW==="resume"?"resFile":""};
@@ -7944,6 +7969,30 @@ document.addEventListener("dragover",e=>{
   document.querySelectorAll(".drop-on").forEach(x=>{if(x!==t.el)x.classList.remove("drop-on")});
   if(t.el)t.el.classList.add("drop-on");
 });
+/* Every upload shows that it takes a drop: each upload button gets "or drop a file here" under its row, and the big
+   empty spaces (the empty Applications list, the job tracker card in Find jobs) become dashed drop areas. It runs
+   whenever the page draws, since those parts are drawn again and again. data-drop names the file input a drop goes to. */
+const DROP_BTNS=[["[data-act=upload-resume]:not(.dropzone)","resFile","or drop your resume here"],
+  ["[data-act=sl-open-tracker],[data-td=add],[data-tk=add]","slTrkFile","or drop your .xlsx file here"],["#slRestore","slRestoreFile","or drop the backup file here"]];
+const DROP_AREAS=[["#list > .empty","slTrkFile","Drop your job tracker file (.xlsx) here"],["#slTrkCard","slTrkFile","Drop a job tracker file (.xlsx) on this card to add it"]];
+function markDropSpots(){
+  for(const [sel,id,text] of DROP_AREAS)document.querySelectorAll(sel).forEach(a=>{
+    a.dataset.drop=id;a.classList.add("dz-area");
+    if(text&&!a.querySelector(":scope > .dropnote"))a.insertAdjacentHTML("beforeend",`<span class="dropnote">${icon("upload")}${esc(text)}</span>`);   // again after the area redraws itself
+  });
+  for(const [sel,id,text] of DROP_BTNS)document.querySelectorAll(sel).forEach(b=>{   // after the areas: a button inside one needs no note
+    if(b.dataset.dropMarked||b.closest(".dropzone,.dz-area"))return;
+    b.dataset.dropMarked="1";b.dataset.drop=id;
+    const note=`<span class="dropnote">${icon("upload")}${esc(text)}</span>`,step=b.closest("li");
+    if(step&&step.closest(".hsteps,.ivhow,ol")){const d=step.querySelector(":scope > div");if(d&&!d.querySelector(".dropnote"))d.insertAdjacentHTML("beforeend",note);return}   // a numbered step: under its text
+    const row=b.closest(".row2,.rstools,p")||b;
+    if(row.nextElementSibling&&row.nextElementSibling.classList.contains("dropnote"))return;
+    row.insertAdjacentHTML("afterend",note);
+  });
+}
+let dropMarkQueued=false;
+new MutationObserver(()=>{if(dropMarkQueued)return;dropMarkQueued=true;setTimeout(()=>{dropMarkQueued=false;markDropSpots()},30)}).observe(document.body,{childList:true,subtree:true});
+setTimeout(markDropSpots);   // once the rest of this script (ICONS) has run
 /* Several resumes dropped at once are each added (the last one becomes the one in use); a job tracker file or a backup
    takes one file, and says so when more were dropped. */
 async function addResumes(files){
