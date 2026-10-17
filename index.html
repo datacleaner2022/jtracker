@@ -2011,6 +2011,38 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
 .lgroup h4{text-transform:uppercase;letter-spacing:.05em;font-size:11.5px}
 .frow b{color:var(--text);font-weight:650}
 #setForm>h2,dialog h2,.vhead h2,.dhead h2,.hero h2{color:var(--text)}
+
+/* Applications header: the number of jobs in the tracker file, on the right of the title */
+.vhead-tracker{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.vcount{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:120px;padding:14px 20px;
+  border:1px solid var(--accent-line);border-radius:var(--radius-sm);background:var(--accent-soft);text-align:center}
+.vcount b{font:700 34px/1 var(--display);color:var(--head);font-variant-numeric:tabular-nums}
+.vcount span{margin-top:6px;font-size:12.5px;color:var(--muted)}
+.vcount:empty{display:none}
+@media (max-width:560px){.vcount{min-width:0;padding:10px 14px}.vcount b{font-size:26px}}
+/* The job page's buttons: Interview prep on top, standing out over everything (full width, taller, a gradient with a
+   glow), then one even row of Listing, Careers page and Research, and the calendar button on its own row when shown. */
+.acts .btn.prep-hi{justify-content:center;min-height:52px;font-size:15.5px;font-weight:700;letter-spacing:-.01em;color:#fff;border:0;
+  background:linear-gradient(115deg,var(--accent-fill,var(--accent)) 0%,#c026d3 55%,#f97316 100%);background-size:160% 100%;
+  box-shadow:0 8px 24px -8px color-mix(in srgb,#c026d3 70%,transparent),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:background-position .35s ease,transform .15s ease,box-shadow .2s ease}
+.acts .btn.prep-hi .ic{color:#fff}
+.acts .btn.prep-hi:hover{background-position:100% 0;transform:translateY(-1px);
+  box-shadow:0 12px 30px -8px color-mix(in srgb,#c026d3 80%,transparent),inset 0 1px 0 rgba(255,255,255,.3)}
+.acts .btn.prep-hi:active{transform:translateY(0)}
+.acts .btn.prep-hi .prep-soon{background:rgba(255,255,255,.22);color:#fff}
+:root[data-motion="reduce"] .acts .btn.prep-hi{transition:none}
+.acts .acts-more{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:420px){.acts .acts-more{grid-template-columns:1fr}}
+.acts .acts-more > :last-child:nth-child(odd){grid-column:auto}
+.acts .acts-more > .wide{grid-column:1/-1}
+.btn.listing{font-weight:600}
+.btn .logo-site{width:16px;height:16px;flex:none;stroke:none}
+/* Applications: a wider page, with a narrower list so the job details get most of the room */
+@media (min-width:881px){
+  body[data-view="tracker"] .wrap,body[data-view="tracker"] header.top{max-width:1480px}
+  body[data-view="tracker"] .main{grid-template-columns:minmax(300px,.72fr) minmax(0,1.6fr)}
+}
 </style>
 </head>
 <body data-view="home">
@@ -2043,9 +2075,9 @@ legend::before{content:"";width:3px;height:15px;border-radius:2px;background:var
     <p class="headline" id="headline">&nbsp;</p>
   </section>
   <section id="home" aria-label="Home"></section>
-  <div class="vhead vhead-tracker"><h2>Applications</h2><p>Every role in your tracker, with where each one stands.</p></div>
+  <div class="vhead vhead-tracker"><div><h2>Applications</h2><p>Every role in your tracker, with where each one stands.</p></div>
+    <div class="vcount" id="jobCount" aria-live="polite"></div></div>
   <section class="line" aria-label="Application pipeline">
-    <div class="stations" id="stations"></div>
     <div class="alerts" id="alerts"></div>
   </section>
 
@@ -4932,10 +4964,10 @@ const STATIC_GUIDE = [
     intro: "**Applications** lists every job in your job tracker file, best to apply for first, with where each one stands.",
     steps: [
       { text: "Click a job to see what they ask for, where your resume matches and the gaps to cover, each as a short list. The closing date shows when the posting gives one.", img: "st-09-applications.jpg", caption: "Applications: every job, and the one you opened." },
-      { text: "**Open listing** takes you to the posting itself. **Company careers page** opens the employer's own jobs page when the search found one; otherwise **Search for it** looks it up on the web." },
+      { text: "**Listing** (with the job board's logo) takes you to the posting itself. **Careers page** opens the employer's own jobs page when the search found one; otherwise **Find careers page** looks it up on Google." },
       { text: "**Craft resume** and **Draft cover letter** write versions tailored to this job, using only what's on your resume. The resume is laid out for applicant tracking systems (ATS), and an **ATS check** under it lists what passes and what to fix, including keywords from the posting that are missing. Read them, edit anything, then **Save Word and PDF**. They appear on the Resume tab under Custom resumes and Cover letters." },
-      { text: "**Research the company** and **Interview prep** open the job's company page. See **Prepare for interviews** below." },
-      { text: "After applying, click **Mark as applied today**. Keep the status, next step and follow-up date up to date, and Home reminds you when a follow-up is due." },
+      { text: "**Company info** (a briefing on the employer) and **Interview prep** open the job's company page. See **Prepare for interviews** below." },
+      { text: "After applying, set the status under **Your progress**. Keep the next step and follow-up date up to date, and Home reminds you when a follow-up is due." },
     ] },
   { id: "interview", title: "Prepare for interviews",
     intro: "**Interview prep** builds a guide for each job: a briefing on the company and role, and the questions you're likely to get, with a practice mode that gives feedback on your answers.",
@@ -6976,11 +7008,8 @@ function renderIntro(){
 function renderStations(){
   const all=jobList(),counts={};STATIONS.forEach(s=>counts[s.k]=0);
   all.forEach(j=>counts[stageOf(j.id)]++);
-  const total=all.length||1,moved=all.length-counts.queue;
-  $("stations").innerHTML=STATIONS.map(s=>`<button type="button" class="station${s.k==="closed"?" off":""}" data-k="${s.k}" aria-pressed="${F.stage===s.k}" style="--sc:${s.c}">
-      <div class="n">${counts[s.k]}</div><div class="l">${s.l}</div><div class="d">${s.d}</div></button>`).join("")+
-    `<div class="belt" aria-hidden="true"><i style="width:${Math.round(moved/total*100)}%"></i></div>`;
-  $("stations").querySelectorAll(".station").forEach(b=>b.onclick=()=>setF({stage:F.stage===b.dataset.k?"":b.dataset.k,follow:false}));
+  const moved=all.length-counts.queue;
+  $("jobCount").innerHTML=`<b>${all.length}</b><span>${all.length===1?"job":"jobs"} found</span>`;
   const due=all.filter(j=>followDue(j.id));
   const high=all.filter(j=>stageOf(j.id)==="queue"&&j.fit==="High"&&!possiblyClosed(j));
   const fresh=all.filter(isNew);
@@ -7109,7 +7138,7 @@ function renderDetail(){
   <button class="btn small back" type="button" id="backBtn">Back to list</button>
   <div class="dbar" id="dbar"><div class="dbar-in">
     <div class="dbar-t"><span class="co">${esc(j.company)}</span><b>${esc(j.role)}</b></div>
-    ${link?`<a class="btn small primary" href="${esc(safeUrl(link))}" target="_blank" rel="noopener">${icon("external")}Open listing</a>`:""}
+    ${link?`<a class="btn small listing" href="${esc(safeUrl(link))}" target="_blank" rel="noopener">${siteLogo(host)}Listing</a>`:""}
   </div></div>
   <div class="dhead">
     <div class="co">${esc(j.company)}</div>
@@ -7130,16 +7159,13 @@ function renderDetail(){
     ${staleHtml(j)}
   </div>
   <div class="acts">
-    <div class="acts-main">
-      ${link?`<a class="btn primary" href="${esc(safeUrl(link))}" target="_blank" rel="noopener">${icon("external")}Open listing on ${esc(host||"job board")}</a>`:""}
-      ${st==="queue"?`<button class="btn amber" type="button" id="markApplied">${icon("check")}Mark as applied today</button>`:""}
-    </div>
+    <button class="btn prep-hi" type="button" id="prepBtn">${icon("mic")}Interview prep${["screen","interview"].includes(st)?`<span class="prep-soon">Interview stage</span>`:""}</button>
     <div class="acts-more">
-      ${ex.careers?`<a class="btn" href="${esc(safeUrl(ex.careers))}" target="_blank" rel="noopener">${icon("globe")}Company careers page</a>`
-        :`<a class="btn" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener" title="No careers page was saved for this job, so this searches the web">${icon("globe")}Search for it</a>`}
-      <button class="btn" type="button" id="researchBtn">${icon("building")}Research the company</button>
-      <button class="btn prep-hi" type="button" id="prepBtn">${icon("mic")}Interview prep${["screen","interview"].includes(st)?`<span class="prep-soon">Interview stage</span>`:""}</button>
-      ${p.followUp?`<button class="btn" type="button" id="calJob">${icon("calendar")}Add follow-up to calendar</button>`:""}
+      ${link?`<a class="btn listing" href="${esc(safeUrl(link))}" target="_blank" rel="noopener" title="Open the listing on ${esc(host||"the job board")}">${siteLogo(host)}Listing</a>`:""}
+      ${ex.careers?`<a class="btn" href="${esc(safeUrl(ex.careers))}" target="_blank" rel="noopener">${icon("globe")}Careers page</a>`
+        :`<a class="btn" href="https://www.google.com/search?q=${q}" target="_blank" rel="noopener" title="No careers page was saved for this job, so this searches Google for it">${icon("globe")}Find careers page</a>`}
+      <button class="btn" type="button" id="researchBtn" title="A briefing on the employer: what it does, recent news, what it's like to work there and its interview process">${icon("building")}Company info</button>
+      ${p.followUp?`<button class="btn wide" type="button" id="calJob">${icon("calendar")}Add follow-up to calendar</button>`:""}
     </div>
     <div class="acts-foot"><button class="btn ghost small" type="button" id="hideCo">${icon("hide")}Hide this company</button></div>
   </div>
@@ -7198,11 +7224,6 @@ function renderDetail(){
   const dbarSync=()=>{const on=el.scrollTop>dh2.offsetTop+dh2.offsetHeight-12;dbar.classList.toggle("on",on);dbar.inert=!on};
   el.onscroll=dbarSync;dbarSync();
   $("researchBtn").onclick=()=>openCompany(id);
-  if($("markApplied"))$("markApplied").onclick=()=>{
-    const d=today();
-    const fu=addDays(d,fuDays());
-    saveProg(id,{status:"Applied",dateApplied:d,followUp:fu,lastUpdate:d,nextStep:p.nextStep||"Follow up if no reply"},`Marked as applied. Follow-up set for ${fu}.`);renderAll();
-  };
   const bind=(eid,key,evt)=>{$(eid).addEventListener(evt,()=>{
     const patch={[key]:$(eid).value,lastUpdate:today()};
     if(key==="status"&&$(eid).value!=="Not Applied"&&!progOf(id).dateApplied){patch.dateApplied=today();if(!progOf(id).followUp)patch.followUp=addDays(today(),fuDays())}
@@ -7951,6 +7972,13 @@ const ICONS={
   book:'<path d="M8 4.25C6.75 3.25 5 2.75 2.75 2.75v9.5c2.25 0 4 .5 5.25 1.5 1.25-1 3-1.5 5.25-1.5v-9.5c-2.25 0-4 .5-5.25 1.5zM8 4.25v9.5"/>'
 };
 function icon(n){return ICONS[n]?`<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">${ICONS[n]}</svg>`:""}
+/* The job board's own logo for a listing link (LinkedIn, Indeed), or the plain open-link icon for any other site */
+function siteLogo(host){
+  const h=String(host||"").toLowerCase();
+  if(/(^|\.)linkedin\.com$/.test(h))return `<svg class="ic logo-site" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="3" fill="#0A66C2"/><circle cx="4.6" cy="4.4" r="1.2" fill="#fff"/><rect x="3.6" y="6.3" width="2" height="6.2" fill="#fff"/><path d="M7.3 6.3h1.9v.9c.3-.5 1-1.1 2.1-1.1 1.8 0 2.3 1.1 2.3 2.7v3.7h-2V9.2c0-.8-.2-1.4-1-1.4s-1.2.6-1.2 1.4v3.3H7.3z" fill="#fff"/></svg>`;
+  if(/(^|\.)indeed\.com$/.test(h))return `<svg class="ic logo-site" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="3" fill="#2557A7"/><circle cx="8.6" cy="4.6" r="1.5" fill="#fff"/><path d="M7.3 7.2h2.6v5.9H7.3z" fill="#fff"/><path d="M4.2 5.6c1.6-2.3 4.6-3.3 7.6-2.4" stroke="#fff" stroke-width="1" fill="none" stroke-linecap="round"/></svg>`;
+  return icon("external");
+}
 /* Icons for fixed controls in the page markup (the section buttons and Settings), added once at start. */
 function addStaticIcons(){
   const nav={home:"home",resume:"file",tracker:"briefcase",search:"search",interviews:"mic",offers:"offer"};
