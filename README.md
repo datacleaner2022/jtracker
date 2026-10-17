@@ -54,7 +54,7 @@ reads, plus three made-up rows marked "EXAMPLE ROW" in Notes to delete once you 
 - Your tracker is an Excel file. Open it with **Open a tracker file**. In Chrome and Edge, Job tracker stays
   linked to the file and saves every change straight into it, with its formats, dropdowns and formulas.
   In other browsers, a bar reminds you to download the updated tracker after making changes.
-- Two ways to draft: free chat (copy and paste into ChatGPT or Claude) or a local model.
+- Two ways to draft: free chat (copy and paste into a free AI chat such as ChatGPT, Gemini or Claude) or a local model.
   A local model in LM Studio can also search the web for Find jobs (see below). Paid API keys, the automatic
   job finder and the link check need a server, so they aren't part of this site.
 - Cover letters and resumes are made as Word files and PDFs and kept with each job. Download them,

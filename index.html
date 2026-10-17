@@ -5102,10 +5102,13 @@ const STATIC_GUIDE = [
     steps: [
       { text: "In **Settings**, **General**, choose **Free chat (copy and paste)** and click **Save settings**." },
       { text: "When you ask for something (for example **Craft resume** on a job, or **Write the search prompt** in Find jobs), the **Ask your chat** window opens with the prompt ready." },
-      { text: "Pick a chat in the window and click **Copy and open chat** (or **Copy prompt**, then **Open**). Paste the prompt and send it. For finding jobs, turn on the chat's **web search**.", img: "st-04-chat-window.jpg", caption: "The Ask your chat window: copy the prompt, paste the reply." },
+      { text: "Pick a chat from the dropdown in the window. **No login needed**: ChatGPT, Gemini, Perplexity and Z.ai. **Free account and login needed**: Claude, Microsoft Copilot, DeepSeek, Mistral Le Chat, Grok, Qwen and Kimi, each marked **(login)**. Job tracker remembers the one you picked for next time.", img: "st-04-chat-window.jpg", caption: "The Ask your chat window: pick a chat, copy the prompt, paste the reply." },
+      { text: "Click **Copy and open chat**: it copies the prompt and opens your chat in a new tab, so Job tracker stays open in this one. (**Copy prompt**, then **Open**, does the same in two steps.) Paste the prompt into the chat and send it." },
+      { text: "For finding jobs, company research and pay, turn on the chat's **web search** first (often a **Search** or globe button). Without it the chat can make up postings and facts." },
+      { text: "DeepSeek, Qwen, Kimi and Z.ai are run from China. The window says so when you pick one: your contact details are swapped for placeholders, but your work history is still in the prompt. Choose another chat if that worries you." },
       { text: "When the chat has finished, click the chat's own **copy** button under the reply (it copies the whole reply, as written), paste it into **The chat's reply** and click the button under it: **Use this reply**, or for a job search **Generate job tracker file**. Job tracker does the rest: the resume or letter, the Word and PDF files, or the job results." },
       { text: "Job tracker tidies what the copy brings along: labels such as **Writing** from a ChatGPT block, escaped characters, citation marks and lines that ran together. Resume prompts ask the chat for a code block, so every line break survives." },
-      { text: "Your privacy: before your resume goes into a prompt, your name, email, phone, address and links are replaced with placeholders such as [NAME] and [EMAIL]. Job tracker puts them back when you paste the reply." },
+      { text: "Your privacy: before your resume goes into a prompt, your name, email, phone, address and links are replaced with placeholders such as [NAME] and [EMAIL]. Job tracker puts them back when you paste the reply. The prompt only names the details your resume has, so a resume without a LinkedIn link doesn't get one, and any placeholder left over in the reply is taken out." },
       { text: "**Settings**, **Prompts** has more ready-made prompts to copy: create a job tracker file, find jobs and update it, add one posting, and check which listings are still open." },
     ] },
   { id: "local", title: "Local model: an AI on your computer",
@@ -5123,10 +5126,10 @@ const STATIC_GUIDE = [
     intro: "Everything Job tracker writes for you is built from your own resume. It never invents experience you don't have.",
     steps: [
       { text: "Open the **Resume** tab and click **Add resume**, or use **Upload resume** in the first step on Home. A Word file (.docx) works best; a text-based PDF, .odt, .rtf, .txt or .md also works. Home then greets you by your first name." },
-      { text: "The card at the top shows the resume in use, with its words, sections and the skills Job tracker recognises. Your original file is never changed.", img: "st-10-resume.jpg", caption: "The Resume tab: the resume in use, the folder, your custom resumes and cover letters." },
+      { text: "**Your resume** shows the resume in use, with its **ATS check**, its sections and the skills Job tracker recognises. Next to it, the **ATS Resume Optimizer** turns any resume into a clean layout applicant tracking systems read well. Your original file is never changed.", img: "st-10-resume.jpg", caption: "The Resume tab: your resume with its ATS check, and the ATS Resume Optimizer." },
       { text: "**Example ATS resumes** (a software developer, a software engineering manager, an HR associate and an administrative assistant) show the layout applicant tracking systems read well. **View** shows one with the posting it was written for; **PDF** and **Word** download it. They're there before you add your own resume, too." },
       { text: "Have more than one resume? Add each one, then pick from the **Resume** dropdown. **Automatic** uses a Word file first, then the newest. You can still choose a different resume on a single job." },
-      { text: "Further down, **Custom resumes** and **Cover letters** list everything you've saved for applications, newest first. **PDF** opens one, **Word** downloads it. Files are named after your resume and the job, for example Jane_Doe_Resume - Software Developer - Contoso." },
+      { text: "The **Saved documents** tab lists the custom resumes and cover letters you've saved for applications, newest first. **PDF** opens one, **Word** downloads it. Files are named after your resume and the job, for example Jane_Doe_Resume - Software Developer - Contoso." },
       { text: "**How it covers your listings** shows how well your resume matches the skills your listings ask for, and which skills come up that your resume doesn't mention. Add them only if you really have them." },
     ] },
   { id: "tracker", title: "Get your job tracker file",
@@ -5186,6 +5189,9 @@ const STATIC_GUIDE = [
       { text: "**Couldn't save into the file**: the job tracker file may be open in Excel. Close it there, then click **Save** in the bar under the tabs." },
       { text: "**The local model doesn't connect**: check it's running, the address and model name in Settings, that CORS is on (OLLAMA_ORIGINS for Ollama, Enable CORS in LM Studio), and that you allowed local network access when the browser asked (the icon at the left of the address bar). Then click **Test connection** again." },
       { text: "**A pasted reply wasn't understood**: use the chat's own copy button to copy the whole reply, not a selection of part of it, and paste it again. For job searches, make sure web search was on. For **Build prep**, the reply needs both parts: the company briefing and the interview guide." },
+      { text: "**The chat didn't open, or the prompt wasn't copied**: your browser may have blocked the new tab. Allow pop-ups for this site, or click **Open** next to the dropdown. If the window says **Press Ctrl+C to copy**, the prompt is selected: press Ctrl+C, then paste it into the chat." },
+      { text: "**The chat asks you to sign in**: chats marked **(login)** need a free account. Make one, or pick a chat under **No login needed**. Sites change their rules, so a chat may start asking even if it didn't before." },
+      { text: "**A placeholder such as [LINKEDIN] shows in a document**: it's a detail your resume doesn't have. Job tracker takes these out by itself, so you'd mostly see one in an older document. Delete it in the box before you click **Save Word and PDF**, or click **Craft again**." },
       { text: "**A tailored resume ran together into long lines**: click **Craft again** and copy the new reply with the chat's copy button; the prompt asks for a code block, which keeps every line. The **ATS check** under the resume shows whether the headings and job lines came through." },
       { text: "**Something went wrong with the job tracker file**: Job tracker keeps a copy before every change. Settings, Local files, **Job tracker file folder** lists the backups to download." },
       { text: "**Everything is gone**: you may be in another browser, a private window, or your browser's data was cleared. Use the same browser, and restore a backup from Settings, Local files." },
@@ -5866,7 +5872,7 @@ async function localWebChat(s, prompt, signal) {
     const msg = String((body.error && (body.error.message || body.error)) || "");
     if (/permission denied to use plugin/i.test(msg))
       throw new AIError(`LM Studio wouldn't run the plugin “${cfg.web_plugin}”. In LM Studio's server settings, switch on “Allow calling servers from mcp.json”, and check the plugin name matches mcp.json.`);
-    if (res.status === 404) throw new AIError("Web search needs LM Studio 0.4 or newer, and Ollama doesn't have it. Update LM Studio, or use GPT/Claude prompts.");
+    if (res.status === 404) throw new AIError("Web search needs LM Studio 0.4 or newer, and Ollama doesn't have it. Update LM Studio, or use Chat prompts.");
     if (res.status === 401 || res.status === 403) throw new AIError("LM Studio turned the API key away. Check it in Settings.");
     throw new AIError(`local model error ${res.status}: ${msg.slice(0, 300)}`);
   }
@@ -9337,7 +9343,7 @@ function engineToggle(engine){
   return `<div class="enginebar"><div class="seg2 seg3" role="group" aria-label="How to search">
     <button type="button" data-engine="auto" aria-current="${engine==="auto"}">Automatic<small>No AI, free</small></button>
     <button type="button" data-engine="api" aria-current="${engine==="api"}">AI search<small>${nm?"Your "+nm+" API key":lw?"Your local model":"Needs a web search plugin"}</small></button>
-    <button type="button" data-engine="chat" aria-current="${engine==="chat"}">GPT/Claude prompts<small>Copy a prompt, paste the reply</small></button></div>
+    <button type="button" data-engine="chat" aria-current="${engine==="chat"}">Chat prompts<small>Copy a prompt, paste the reply</small></button></div>
     <p class="note" style="margin:8px 0 0">${esc(note)}${own?" This is just for Find jobs: drafting and research keep the AI mode from Settings.":""}</p></div>`;
 }
 function bindEngine(){
